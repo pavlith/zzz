@@ -27,6 +27,6 @@ func Migrate(db *gorm.DB) error {
  return db.AutoMigrate(
   &models.User{},&models.Workspace{},&models.WorkspaceMember{},
   &models.Group{},&models.GroupMember{},&models.Vault{},
-  &models.VaultPermission{},&models.VaultKeyEnvelope{},&models.Item{},&auth.Token{},&models.Device{}, &models.DeviceKeyEnvelope{}, &models.DeviceChallenge{}, &models.SyncEvent{}, &models.SyncOperation{},
+  &models.VaultPermission{},&models.VaultKeyEnvelope{},&models.Item{},&auth.Token{},&models.Device{}, &models.DeviceKeyEnvelope{}, &models.DeviceChallenge{}, &models.SyncEvent{}, &models.SyncOperation{}, &models.ItemRevision{},
  )
 }
