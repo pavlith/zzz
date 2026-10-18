@@ -49,4 +49,10 @@ func TestRotationRecipientManifest(t *testing.T) {
  var count int64
  if err:=db.Model(&models.RotationRecipient{}).Count(&count).Error;err!=nil{t.Fatal(err)}
  if count!=1{t.Fatalf("manifest size: %d",count)}
+ if err:=db.Model(&models.Device{}).Where("id = ?","first").Update("encryption_public_key",bytes.Repeat([]byte{9},32)).Error;err!=nil{t.Fatal(err)}
+ changed:=request("GET","/api/v1/vaults/v/rotation","")
+ if changed.Code!=200{t.Fatalf("key drift status: %d",changed.Code)}
+ var changedState struct{Invalid []string `json:"invalid_device_ids"`;Complete bool `json:"envelopes_complete"`}
+ if err:=json.Unmarshal(changed.Body.Bytes(),&changedState);err!=nil{t.Fatal(err)}
+ if len(changedState.Invalid)!=1||changedState.Invalid[0]!="first"||changedState.Complete{t.Fatalf("undetected recipient key replacement: %+v",changedState)}
 }
