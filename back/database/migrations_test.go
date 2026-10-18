@@ -54,3 +54,18 @@ func TestEnvelopeMigrationIsIdempotentWithStoredRecord(t *testing.T){
  if err:=db.First(&got,"id = ?","record").Error;err!=nil{t.Fatal(err)}
  if string(got.Envelope)!="signed-envelope"{t.Fatalf("envelope changed on repeat migration: %q",got.Envelope)}
 }
+
+func TestUpgradeFromVersionOnePreservesEnvelope(t *testing.T){
+ db,err:=Open(":memory:");if err!=nil{t.Fatal(err)}
+ if err:=db.Exec("CREATE TABLE schema_migrations (version integer PRIMARY KEY, applied_at datetime NOT NULL)").Error;err!=nil{t.Fatal(err)}
+ if err:=baselineSQL(db);err!=nil{t.Fatal(err)}
+ if err:=db.Exec("INSERT INTO schema_migrations(version,applied_at) VALUES(1,CURRENT_TIMESTAMP)").Error;err!=nil{t.Fatal(err)}
+ if err:=db.Exec("INSERT INTO device_key_envelopes(id,vault_id,device_id,key_epoch,crypto_version,ciphertext) VALUES(?,?,?,?,?,?)","old","vault","device",1,1,[]byte("signed-envelope")).Error;err!=nil{t.Fatal(err)}
+ if err:=Migrate(db);err!=nil{t.Fatal(err)}
+ var got models.DeviceKeyEnvelope
+ if err:=db.First(&got,"id = ?","old").Error;err!=nil{t.Fatal(err)}
+ if string(got.Envelope)!="signed-envelope"{t.Fatalf("migration lost envelope: %q",got.Envelope)}
+ if err:=Migrate(db);err!=nil{t.Fatalf("second upgrade: %v",err)}
+ var count int64
+ if err:=db.Model(&schemaMigration{}).Count(&count).Error;err!=nil||count!=2{t.Fatalf("unexpected migration ledger: %d %v",count,err)}
+}
