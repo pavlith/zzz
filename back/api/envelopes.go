@@ -21,7 +21,9 @@ func (a *API) listKeyEnvelopes(w http.ResponseWriter, r *http.Request, userID st
   Where("device_key_envelopes.vault_id = ? AND devices.user_id = ? AND devices.revoked_at IS NULL AND devices.verified_at IS NOT NULL AND devices.trusted_at IS NOT NULL AND device_key_envelopes.key_epoch = vaults.key_epoch",vaultID,userID).
   Find(&records).Error
  if err != nil { failure(w,err);return }
- write(w,http.StatusOK,records)
+ responses,err:=envelopeResponses(records)
+ if err!=nil{problem(w,500,"invalid_stored_envelope");return}
+ write(w,http.StatusOK,responses)
 }
 
 func (a *API) createKeyEnvelope(w http.ResponseWriter,r *http.Request,userID string) {
@@ -65,5 +67,7 @@ func (a *API) createKeyEnvelope(w http.ResponseWriter,r *http.Request,userID str
   KeyEpoch:in.KeyEpoch,CryptoVersion:1,Ciphertext:ciphertext,
  }
  if err:=a.db.Create(&item).Error;err!=nil {failure(w,err);return}
- write(w,http.StatusCreated,item)
+ response,err:=envelopeResponse(item)
+ if err!=nil{problem(w,500,"invalid_stored_envelope");return}
+ write(w,http.StatusCreated,response)
 }
