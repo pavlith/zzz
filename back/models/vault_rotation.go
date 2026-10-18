@@ -8,5 +8,6 @@ type VaultRotation struct {
  FromEpoch uint64 `gorm:"not null"`
  ToEpoch uint64 `gorm:"not null"`
  Status string `gorm:"not null"`
+ ManifestSHA256 string `gorm:"size:64" json:"manifest_sha256"`
  CreatedAt time.Time
 }
