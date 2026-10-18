@@ -44,11 +44,9 @@ func(a *API) rotationStatus(w http.ResponseWriter,r *http.Request,userID string)
  if !a.check(w,userID,vaultID,acl.Manage){return}
  var rotation models.VaultRotation
  if err:=a.db.Where("vault_id = ? AND status = ?",vaultID,"prepared").First(&rotation).Error;err!=nil{failure(w,err);return}
- var required int64
- if err:=a.db.Model(&models.RotationRecipient{}).Where("rotation_id = ?",rotation.ID).Count(&required).Error;err!=nil{failure(w,err);return}
- var staged int64
- if err:=a.db.Model(&models.DeviceKeyEnvelope{}).Where("vault_id = ? AND key_epoch = ?",vaultID,rotation.ToEpoch).Count(&staged).Error;err!=nil{failure(w,err);return}
- write(w,200,map[string]any{"rotation_id":rotation.ID,"from_epoch":rotation.FromEpoch,"to_epoch":rotation.ToEpoch,"staged_envelopes":staged,"required_recipients":required,"status":rotation.Status,"can_activate":false,"reason":"atomic_activation_not_implemented"})
+ validation,err:=validateRotation(a.db,rotation)
+ if err!=nil{failure(w,err);return}
+ write(w,200,map[string]any{"rotation_id":rotation.ID,"from_epoch":rotation.FromEpoch,"to_epoch":rotation.ToEpoch,"staged_envelopes":validation.Staged,"required_recipients":validation.Required,"missing_device_ids":validation.Missing,"invalid_device_ids":validation.Invalid,"envelopes_complete":validation.Complete,"status":rotation.Status,"can_activate":false,"reason":"authenticated_activation_not_implemented"})
 }
 
 var errRotationPending = &rotationPendingError{}
