@@ -1,3 +1,5 @@
+> **Status (2026-10-18): development/prototype subsystem note.** Not a production-ready guarantee. Track outstanding work and acceptance criteria in [the canonical backend + web roadmap](roadmap-backend-web.md). In particular, web is not implemented, production authentication and E2EE integration remain open, and Vault key rotation activation is disabled.
+
 # E2EE client envelope v1 (experimental)
 
 Go package: `pkgs/e2ee`. This is a client-side library for future Go-based clients; not wired to the Android/Web app or the existing server-side opaque-envelope protocol.
