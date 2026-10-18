@@ -4,6 +4,7 @@ import (
  "crypto/sha256"
  "encoding/hex"
  "encoding/json"
+ "errors"
  "net/http"
  "strings"
 
@@ -13,6 +14,8 @@ import (
  "github.com/pavlith/zzz/back/service"
  "gorm.io/gorm"
 )
+
+var errOperationReuse = errors.New("operation identifier reused")
 
 type pushRequest struct {
  OperationID string `json:"operation_id"`
@@ -48,7 +51,7 @@ func(a *API) pushSync(w http.ResponseWriter,r *http.Request,userID string){
    replay=true
    return nil
   }
-  if q.Error!=gorm.ErrRecordNotFound{return q.Error}
+  if !errors.Is(q.Error,gorm.ErrRecordNotFound){return q.Error}
   var itemID string
   var revision uint64
   svc:=service.New(tx)
