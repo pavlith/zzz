@@ -65,10 +65,13 @@ func (s *Service) PutItem(actorID string, item *models.Item,expectedRevision uin
  if len(item.Ciphertext)==0||len(item.Nonce)==0||item.CryptoVersion==0{return errors.New("encrypted payload required")}
  now:=time.Now().UTC()
  return s.DB.Transaction(func(tx *gorm.DB)error{
+  var vault models.Vault
+  if err:=tx.First(&vault,"id = ?",item.VaultID).Error;err!=nil{return err}
   if item.ID=="" {
    if expectedRevision!=0{return errors.New("new item expected revision must be zero")}
    item.ID=uuid.NewString();item.Revision=1;item.CreatedAt=now;item.UpdatedAt=now
    if err:=tx.Create(item).Error;err!=nil{return err}
+   if err:=tx.Create(&models.ItemRevision{VaultID:item.VaultID,ItemID:item.ID,Revision:1,KeyEpoch:vault.KeyEpoch,Nonce:item.Nonce,Ciphertext:item.Ciphertext,CryptoVersion:item.CryptoVersion}).Error;err!=nil{return err}
    return tx.Create(&models.SyncEvent{VaultID:item.VaultID,ItemID:item.ID,Revision:1,Operation:"upsert"}).Error
   }
   if expectedRevision==0{return errors.New("existing item requires revision")}
@@ -77,6 +80,7 @@ func (s *Service) PutItem(actorID string, item *models.Item,expectedRevision uin
   if res.Error!=nil{return res.Error}
   if res.RowsAffected==0{return errors.New("revision conflict or item not found")}
   item.Revision=expectedRevision+1
+  if err:=tx.Create(&models.ItemRevision{VaultID:item.VaultID,ItemID:item.ID,Revision:item.Revision,KeyEpoch:vault.KeyEpoch,Nonce:item.Nonce,Ciphertext:item.Ciphertext,CryptoVersion:item.CryptoVersion}).Error;err!=nil{return err}
   return tx.Create(&models.SyncEvent{VaultID:item.VaultID,ItemID:item.ID,Revision:item.Revision,Operation:"upsert"}).Error
  })
 }
