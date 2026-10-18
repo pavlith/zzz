@@ -1,0 +1,21 @@
+name: Browser crypto prototype
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - 'web/src/lib/crypto/**'
+      - '.github/workflows/webcrypto.yml'
+  pull_request:
+    paths:
+      - 'web/src/lib/crypto/**'
+      - '.github/workflows/webcrypto.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify experimental TypeScript module and parser fixtures
+        run: node --disable-warning=ExperimentalWarning --test web/src/lib/crypto/candidate-v1.test.mjs
