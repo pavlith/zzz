@@ -4,6 +4,7 @@ import (
  "crypto/ed25519"
  "crypto/sha256"
  "encoding/hex"
+ "encoding/json"
  "net/http"
  "strconv"
 
@@ -27,14 +28,15 @@ func(a *API) rewrapHistoricalEnvelope(w http.ResponseWriter,r *http.Request,user
   SourceDeviceID string `json:"source_device_id"`
   DeviceID string `json:"device_id"`
   KeyEpoch uint64 `json:"key_epoch"`
-  CryptoVersion uint32 `json:"crypto_version"`
-  Ciphertext []byte `json:"ciphertext"`
+  Envelope json.RawMessage `json:"envelope"`
   Signature []byte `json:"signature"`
  }
- if err:=decode(r,&input);err!=nil||input.SourceDeviceID==""||input.DeviceID==""||input.KeyEpoch==0||input.CryptoVersion!=1||len(input.Ciphertext)<32||len(input.Ciphertext)>65536||len(input.Signature)!=ed25519.SignatureSize{
+ if err:=decode(r,&input);err!=nil||input.SourceDeviceID==""||input.DeviceID==""||input.KeyEpoch==0||len(input.Envelope)==0||len(input.Envelope)>65536||len(input.Signature)!=ed25519.SignatureSize{
   problem(w,400,"invalid_historical_rewrap");return
  }
- digest:=sha256.Sum256(input.Ciphertext)
+ ciphertext,parseErr:=decodeCandidateEnvelopeRequest(input.Envelope,vaultID,input.DeviceID,input.KeyEpoch)
+ if parseErr!=nil{problem(w,400,"invalid_historical_rewrap");return}
+ digest:=sha256.Sum256(ciphertext)
  hash:=hex.EncodeToString(digest[:])
  err:=a.db.Transaction(func(tx *gorm.DB)error{
   var vault models.Vault
@@ -51,7 +53,7 @@ func(a *API) rewrapHistoricalEnvelope(w http.ResponseWriter,r *http.Request,user
   var existing int64
   if err:=tx.Model(&models.DeviceKeyEnvelope{}).Where("vault_id = ? AND device_id = ? AND key_epoch = ?",vaultID,input.SourceDeviceID,input.KeyEpoch).Count(&existing).Error;err!=nil{return err}
   if existing!=1{return gorm.ErrRecordNotFound}
-  return tx.Create(&models.DeviceKeyEnvelope{ID:uuid.NewString(),VaultID:vaultID,DeviceID:input.DeviceID,KeyEpoch:input.KeyEpoch,CryptoVersion:input.CryptoVersion,Ciphertext:input.Ciphertext}).Error
+  return tx.Create(&models.DeviceKeyEnvelope{ID:uuid.NewString(),VaultID:vaultID,DeviceID:input.DeviceID,KeyEpoch:input.KeyEpoch,CryptoVersion:1,Ciphertext:ciphertext}).Error
  })
  if err!=nil{
   if err==errKeyEpochMismatch{problem(w,409,"historical_epoch_required");return}
