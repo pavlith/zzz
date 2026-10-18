@@ -1,6 +1,6 @@
 # Pre-v1 legacy retirement audit
 
-Status: **in progress**. The project has not shipped v1. This document tracks deliberate removals; it is not a production migration plan.
+Status: **in progress** (crypto legacy removed; SQLite baseline consolidated). The project has not shipped v1. This document tracks deliberate removals; it is not a production migration plan.
 
 ## Removed in dev
 
@@ -14,7 +14,7 @@ Status: **in progress**. The project has not shipped v1. This document tracks de
 
 | Area | Findings | Decision / blocker |
 | --- | --- | --- |
-| SQLite schema | `back/database/baseline_sql.go` freezes original DDL; `migrations.go` applies versions 1 and 2. Tests cover legacy upgrades and backup/parity. | Candidate for a single clean pre-v1 baseline, **but only after** all tables/indexes are enumerated and startup/migration tests rewritten. Deleting historical migration files without updating DB bootstrapping would break the server. |
+| SQLite schema | `back/database/baseline_sql.go` freezes original DDL; `migrations.go` applies versions 1 and 2. Tests cover legacy upgrades and backup/parity. | Consolidated to one version-1 baseline, including the prepared-rotation uniqueness index. Old two-version development ledgers are rejected, not silently converted. Legacy upgrade/parity tests removed; backup/restore and integrity tests retained. CI verification pending. |
 | API envelopes | `back/api/envelopes.go`, `historical_envelopes.go`, `historical_envelope_rewrap.go` and their tests handle persisted opaque envelopes and rotation history. | Audit wire format, storage constraints, clients and rotation guards before replacing endpoints. Do not equate server opaque blobs with the removed Go client crypto library. |
 | Rotation | Numerous preflight, manifest, commitment, acknowledgement and log handlers. | Keep activation blocked (409); no removal without identifying dependencies and preserving security invariants. |
 | Docs | `docs/e2ee-client-envelope-v1.md`, `docs/e2ee-verified-envelope.md`, `docs/crypto-protocol.md`, `docs/key-envelopes-api.md` may describe older contracts. | Mark superseded where appropriate and reconcile canonical API contract before deletion. |
@@ -29,3 +29,7 @@ Status: **in progress**. The project has not shipped v1. This document tracks de
 5. Security review signer identity, recipient key authentication, manifest trust and rotation activation; do not enable production secrets.
 
 Only `dev` is modified; `main` remains release-gated.
+
+## Local development database reset (destructive)
+
+After backing up any data needed for debugging, stop the server and remove the **development-only** SQLite DB and its `-wal` and `-shm` companions, then restart. The server will initialize the single pre-v1 baseline. Do not run this against a database containing real credentials; none should be used with the prototype. The application must not automatically delete a database on version mismatch.
