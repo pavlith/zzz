@@ -14,6 +14,7 @@ import (
 
 const fixtureVaultID = "12345678-1234-1234-1234-123456789abc"
 const fixtureDeviceID = "22345678-1234-1234-1234-123456789abc"
+const fixtureRotationID = "32345678-1234-1234-1234-123456789abc"
 const fixtureSignerID = "42345678-1234-1234-1234-123456789abc"
 
 func candidateTestEnvelope(t *testing.T,vaultID,deviceID,rotationID,signerID string,epoch uint64,recipientPublic []byte,signer ed25519.PrivateKey,manifest [32]byte) []byte {
