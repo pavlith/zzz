@@ -23,3 +23,16 @@ func TestPreV1RejectsUnknownFutureVersion(t *testing.T) {
  if err:=db.Create(&schemaMigration{Version:3}).Error;err!=nil{t.Fatal(err)}
  if err:=Migrate(db);err==nil{t.Fatal("pre-v1 schema v3 must require explicit reset")}
 }
+
+func TestEnvelopeColumnMigrationPreservesExistingBytes(t *testing.T){
+ db,err:=Open(":memory:");if err!=nil{t.Fatal(err)}
+ if err:=db.Exec("CREATE TABLE device_key_envelopes (id text PRIMARY KEY, vault_id text, device_id text, key_epoch integer, crypto_version integer, ciphertext blob, created_at datetime)").Error;err!=nil{t.Fatal(err)}
+ if err:=db.Exec("INSERT INTO device_key_envelopes(id,vault_id,device_id,key_epoch,crypto_version,ciphertext) VALUES(?,?,?,?,?,?)","old","vault","device",1,1,[]byte("signed-envelope")).Error;err!=nil{t.Fatal(err)}
+ if err:=db.Exec("ALTER TABLE device_key_envelopes RENAME COLUMN ciphertext TO envelope").Error;err!=nil{t.Fatal(err)}
+ var record models.DeviceKeyEnvelope
+ if err:=db.First(&record,"id = ?","old").Error;err!=nil{t.Fatal(err)}
+ if string(record.Ciphertext)!="signed-envelope"{t.Fatalf("envelope changed: %q",record.Ciphertext)}
+ if err:=db.Model(&record).Update("envelope",[]byte("updated-envelope")).Error;err!=nil{t.Fatal(err)}
+ if err:=db.First(&record,"id = ?","old").Error;err!=nil{t.Fatal(err)}
+ if string(record.Ciphertext)!="updated-envelope"{t.Fatalf("envelope update failed: %q",record.Ciphertext)}
+}
