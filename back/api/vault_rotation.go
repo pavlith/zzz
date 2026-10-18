@@ -34,13 +34,16 @@ func(a *API) prepareRotation(w http.ResponseWriter,r *http.Request,userID string
    encryption:=sha256.Sum256(device.EncryptionPublicKey)
    if err:=tx.Create(&models.RotationRecipient{RotationID:out.ID,DeviceID:device.ID,UserID:device.UserID,SigningKeySHA256:hex.EncodeToString(signing[:]),EncryptionKeySHA256:hex.EncodeToString(encryption[:])}).Error;err!=nil{return err}
   }
-  return nil
+  var recipients []models.RotationRecipient
+  if err:=tx.Where("rotation_id = ?",out.ID).Order("device_id").Find(&recipients).Error;err!=nil{return err}
+  out.ManifestSHA256=manifestDigest(out,recipients)
+  return tx.Model(&models.VaultRotation{}).Where("id = ?",out.ID).Update("manifest_sha256",out.ManifestSHA256).Error
  })
  if err!=nil{
   if err==errRotationPending{problem(w,409,"rotation_pending");return}
   failure(w,err);return
  }
- write(w,201,map[string]any{"rotation_id":out.ID,"from_epoch":out.FromEpoch,"to_epoch":out.ToEpoch,"status":out.Status})
+ write(w,201,map[string]any{"rotation_id":out.ID,"from_epoch":out.FromEpoch,"to_epoch":out.ToEpoch,"status":out.Status,"manifest_sha256":out.ManifestSHA256})
 }
 
 func(a *API) rotationStatus(w http.ResponseWriter,r *http.Request,userID string) {
@@ -50,7 +53,7 @@ func(a *API) rotationStatus(w http.ResponseWriter,r *http.Request,userID string)
  if err:=a.db.Where("vault_id = ? AND status = ?",vaultID,"prepared").First(&rotation).Error;err!=nil{failure(w,err);return}
  validation,err:=validateRotation(a.db,rotation)
  if err!=nil{failure(w,err);return}
- write(w,200,map[string]any{"rotation_id":rotation.ID,"from_epoch":rotation.FromEpoch,"to_epoch":rotation.ToEpoch,"staged_envelopes":validation.Staged,"required_recipients":validation.Required,"missing_device_ids":validation.Missing,"invalid_device_ids":validation.Invalid,"unlisted_device_ids":validation.Unlisted,"envelopes_complete":validation.Complete,"status":rotation.Status,"can_activate":false,"reason":"authenticated_activation_not_implemented"})
+ write(w,200,map[string]any{"rotation_id":rotation.ID,"from_epoch":rotation.FromEpoch,"to_epoch":rotation.ToEpoch,"staged_envelopes":validation.Staged,"required_recipients":validation.Required,"missing_device_ids":validation.Missing,"invalid_device_ids":validation.Invalid,"unlisted_device_ids":validation.Unlisted,"envelopes_complete":validation.Complete,"manifest_sha256":rotation.ManifestSHA256,"manifest_valid":validation.ManifestValid,"status":rotation.Status,"can_activate":false,"reason":"authenticated_activation_not_implemented"})
 }
 
 var errRotationPending = &rotationPendingError{}
