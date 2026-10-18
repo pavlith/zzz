@@ -20,7 +20,7 @@ func TestSignedRoundtrip(t *testing.T){
  got,err:=Unwrap(env,recipient.Bytes(),pub,ctx)
  if err!=nil||!bytes.Equal(got,key){t.Fatalf("roundtrip failed: %v",err)}
  t.Run("tampered ciphertext",func(t *testing.T){
-  changed:=env;changed.Ciphertext="A"+env.Ciphertext[1:]
+  changed:=env;if env.Ciphertext[0]=='A'{changed.Ciphertext="B"+env.Ciphertext[1:]}else{changed.Ciphertext="A"+env.Ciphertext[1:]}
   if _,err:=Unwrap(changed,recipient.Bytes(),pub,ctx);err==nil{t.Fatal("tampered ciphertext accepted")}
  })
  t.Run("wrong epoch",func(t *testing.T){
