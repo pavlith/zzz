@@ -141,10 +141,11 @@ func (a *API)items(w http.ResponseWriter,r *http.Request,id string){
   write(w,200,rows);return
  }
  if !a.check(w,id,vault,acl.Write){return}
- var in struct{Nonce []byte `json:"nonce"`;Ciphertext []byte `json:"ciphertext"`;CryptoVersion uint32 `json:"crypto_version"`}
+ var in struct{Nonce []byte `json:"nonce"`;Ciphertext []byte `json:"ciphertext"`;CryptoVersion uint32 `json:"crypto_version"`;KeyEpoch uint64 `json:"key_epoch"`}
  if err:=decode(r,&in);err!=nil{problem(w,400,"invalid_json");return}
+ if in.KeyEpoch==0{problem(w,400,"key_epoch_required");return}
  item:=models.Item{VaultID:vault,Nonce:in.Nonce,Ciphertext:in.Ciphertext,CryptoVersion:in.CryptoVersion}
- if err:=a.svc.PutItem(id,&item,0);err!=nil{failure(w,err);return}
+ if err:=a.writeItemAtEpoch(id,&item,0,in.KeyEpoch);err!=nil{if errors.Is(err,errItemKeyEpoch){problem(w,409,"key_epoch_mismatch");return};failure(w,err);return}
  write(w,201,item)
 }
 func (a *API)singleItem(w http.ResponseWriter,r *http.Request,id string){
@@ -156,10 +157,11 @@ func (a *API)singleItem(w http.ResponseWriter,r *http.Request,id string){
   write(w,200,item);return
  }
  if !a.check(w,id,vault,acl.Write){return}
- var in struct{ExpectedRevision uint64 `json:"expected_revision"`;Nonce []byte `json:"nonce"`;Ciphertext []byte `json:"ciphertext"`;CryptoVersion uint32 `json:"crypto_version"`}
+ var in struct{ExpectedRevision uint64 `json:"expected_revision"`;Nonce []byte `json:"nonce"`;Ciphertext []byte `json:"ciphertext"`;CryptoVersion uint32 `json:"crypto_version"`;KeyEpoch uint64 `json:"key_epoch"`}
  if err:=decode(r,&in);err!=nil{problem(w,400,"invalid_json");return}
+ if in.KeyEpoch==0{problem(w,400,"key_epoch_required");return}
  if in.ExpectedRevision==0{problem(w,400,"expected_revision_required");return}
  item:=models.Item{ID:itemID,VaultID:vault,Nonce:in.Nonce,Ciphertext:in.Ciphertext,CryptoVersion:in.CryptoVersion}
- if err:=a.svc.PutItem(id,&item,in.ExpectedRevision);err!=nil{failure(w,err);return}
+ if err:=a.writeItemAtEpoch(id,&item,in.ExpectedRevision,in.KeyEpoch);err!=nil{if errors.Is(err,errItemKeyEpoch){problem(w,409,"key_epoch_mismatch");return};failure(w,err);return}
  write(w,200,map[string]uint64{"revision":item.Revision})
 }
