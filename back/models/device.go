@@ -10,5 +10,6 @@ type Device struct {
     EncryptionPublicKey []byte `gorm:"not null" json:"encryption_public_key"`
     SigningPublicKey []byte `gorm:"not null" json:"signing_public_key"`
     CreatedAt time.Time `json:"created_at"`
+    VerifiedAt *time.Time `json:"verified_at,omitempty"`
     RevokedAt *time.Time `json:"revoked_at,omitempty"`
 }
