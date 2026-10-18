@@ -45,7 +45,7 @@
 - [x] M3-01 Experimental Go X25519/AES-GCM envelope and signed commitments.
 - [ ] M3-02 Versioned, reviewed canonical binary/JSON format with cross-language known-answer vectors and negative vectors (Go + WebCrypto/TypeScript). **In progress:** isolated Go candidate-v1 parser and negative fixtures; authenticated cryptography, cross-language vectors and review remain pending.
 - [ ] M3-03 Authenticated device public-key directory and anti-substitution/key-transparency workflow with independent witnesses/gossip.
-- [ ] M3-04 Browser crypto adapter: secure key generation, AEAD data encryption/decryption, envelope wrapping/unwrapping, domain separation, key derivation and zeroization limitations documented.
+- [ ] M3-04 Browser crypto adapter: secure key generation, AEAD data encryption/decryption, envelope wrapping/unwrapping, domain separation, key derivation and zeroization limitations documented. **In progress:** experimental browser-side candidate-v1 envelope verification/decryption in `web/src/lib/crypto/candidate-v1.ts`; wrapping, key lifecycle, compatibility fixtures, tests and security review are missing.
 - [ ] M3-05 Authenticated shared Vault Key commitment validation across recipients; sender equivocation detection, signed/witnessed checkpoints.
 - [ ] M3-06 Client-side historical key rewrap, local proof of possession and decryptability checks; recovery/rotation policies with cryptographic review.
 - [ ] M3-07 Security audit, fuzz/property tests and side-channel/error handling review; document browser device-key storage risks.
