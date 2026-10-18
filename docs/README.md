@@ -8,6 +8,7 @@
 - [Web app specification](web-app-spec.md)
 - [API route summary](api.md)
 - [Security release blockers](security-roadmap.md)
+- [Threat model and adversarial test matrix](threat-model.md)
 - [Cryptography overview](crypto-protocol.md)
 - [Git workflow](git-workflow.md)
 
