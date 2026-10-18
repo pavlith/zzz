@@ -25,13 +25,14 @@ func applyMigrations(db *gorm.DB) error {
   if m.Version!=latest+1{return fmt.Errorf("non-contiguous schema migration version: %d",m.Version)}
   latest=m.Version
  }
- const current uint64=1
+ const current uint64=2
  if latest>current{return fmt.Errorf("pre-v1 schema %d is unsupported (expected <= %d): reset the development database; automatic downgrade is disabled",latest,current)}
  migrations:=[]struct{
   version uint64
   run func(*gorm.DB)error
  }{
   {1,baselineSQL},
+  {2,func(tx *gorm.DB)error{return tx.Exec("ALTER TABLE device_key_envelopes RENAME COLUMN ciphertext TO envelope").Error}},
  }
  for _,m:=range migrations{
   if m.version<=latest{continue}

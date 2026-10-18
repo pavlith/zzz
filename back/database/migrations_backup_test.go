@@ -24,7 +24,7 @@ func TestSQLiteVacuumBackupRestorePreV1(t *testing.T){
  if err:=restore.First(&u,"id = ?","preserved").Error;err!=nil||u.Email!="preserved@example.test"{t.Fatalf("lost restored record: %+v, %v",u,err)}
  if err:=checkSQLiteIntegrity(restore);err!=nil{t.Fatal(err)}
  var applied int64
- if err:=restore.Model(&schemaMigration{}).Count(&applied).Error;err!=nil||applied!=1{t.Fatalf("bad restored migration ledger: %d %v",applied,err)}
+ if err:=restore.Model(&schemaMigration{}).Count(&applied).Error;err!=nil||applied!=2{t.Fatalf("bad restored migration ledger: %d %v",applied,err)}
 }
 
 func TestMigrationRejectsForeignKeyCorruption(t *testing.T){

@@ -4,7 +4,7 @@ import "time"
 
 // DeviceKeyEnvelope stores canonical, structurally validated candidate-v1 JSON.
 // Ciphertext is the complete signed envelope (not raw ciphertext); the field
-// name is retained temporarily for existing database queries. Signer trust is
+// Go field name is retained temporarily for existing code; SQLite uses envelope. Signer trust is
 // verified by clients, not by this storage model.
 type DeviceKeyEnvelope struct {
  ID string `gorm:"primaryKey;size:36" json:"id"`
@@ -14,6 +14,6 @@ type DeviceKeyEnvelope struct {
  // CryptoVersion is a pre-v1 storage discriminator fixed to 1 by write APIs.
  // It must not be interpreted as proof of cryptographic validation.
  CryptoVersion uint32 `gorm:"not null" json:"crypto_version"`
- Ciphertext []byte `gorm:"not null" json:"ciphertext"`
+ Ciphertext []byte `gorm:"column:envelope;not null" json:"-"`
  CreatedAt time.Time `json:"created_at"`
 }
