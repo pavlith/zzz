@@ -20,6 +20,8 @@ func TestDeviceBoundToken(t *testing.T) {
  if _,err=IssueForDevice(db,"u","d",time.Hour);err==nil{t.Fatal("unverified device received token")}
  now:=time.Now().UTC()
  if err=db.Model(&device).Update("verified_at",now).Error;err!=nil{t.Fatal(err)}
+ if _,err=IssueForDevice(db,"u","d",time.Hour);err==nil{t.Fatal("untrusted device received token")}
+ if err=db.Model(&device).Update("trusted_at",now).Error;err!=nil{t.Fatal(err)}
  token,err:=IssueForDevice(db,"u","d",time.Hour);if err!=nil{t.Fatal(err)}
  if id,err:=Authenticate(db,"Bearer "+token);err!=nil||id!="u"{t.Fatalf("valid session: %q %v",id,err)}
  if err=db.Model(&device).Update("revoked_at",now).Error;err!=nil{t.Fatal(err)}
