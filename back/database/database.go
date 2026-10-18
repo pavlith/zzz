@@ -5,8 +5,6 @@ import (
  "os"
  "path/filepath"
  "strings"
- "github.com/pavlith/zzz/back/models"
- "github.com/pavlith/zzz/back/auth"
  "gorm.io/driver/sqlite"
  "gorm.io/gorm"
 )
