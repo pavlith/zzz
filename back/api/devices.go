@@ -6,6 +6,8 @@ import (
 
  "github.com/google/uuid"
  "github.com/pavlith/zzz/back/models"
+ "github.com/pavlith/zzz/back/auth"
+ "gorm.io/gorm"
 )
 
 func (a *API) listDevices(w http.ResponseWriter, r *http.Request, userID string) {
@@ -35,11 +37,15 @@ func (a *API) createDevice(w http.ResponseWriter, r *http.Request, userID string
 }
 
 func (a *API) revokeDevice(w http.ResponseWriter, r *http.Request, userID string) {
- now := time.Now().UTC()
- result := a.db.Model(&models.Device{}).
-  Where("id = ? AND user_id = ? AND revoked_at IS NULL", r.PathValue("device"), userID).
-  Update("revoked_at", &now)
- if result.Error != nil { failure(w, result.Error); return }
- if result.RowsAffected == 0 { problem(w, http.StatusNotFound, "not_found"); return }
- write(w, http.StatusOK, map[string]bool{"ok": true})
+ now:=time.Now().UTC()
+ deviceID:=r.PathValue("device")
+ err:=a.db.Transaction(func(tx *gorm.DB)error {
+  result:=tx.Model(&models.Device{}).Where("id = ? AND user_id = ? AND revoked_at IS NULL",deviceID,userID).Update("revoked_at",now)
+  if result.Error!=nil{return result.Error}
+  if result.RowsAffected!=1{return gorm.ErrRecordNotFound}
+  if err:=tx.Model(&auth.Token{}).Where("device_id = ? AND revoked_at IS NULL",deviceID).Update("revoked_at",now).Error;err!=nil{return err}
+  return tx.Where("device_id = ?",deviceID).Delete(&models.DeviceKeyEnvelope{}).Error
+ })
+ if err!=nil{failure(w,err);return}
+ write(w,http.StatusOK,map[string]bool{"ok":true})
 }
