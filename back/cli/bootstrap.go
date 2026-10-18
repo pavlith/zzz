@@ -29,7 +29,7 @@ func bootstrapFirstDevice(db *gorm.DB,userID,deviceID string) error {
   result:=tx.Model(&models.Device{}).Where("id = ? AND user_id = ? AND verified_at IS NOT NULL AND trusted_at IS NULL AND revoked_at IS NULL",deviceID,userID).Update("trusted_at",now)
   if result.Error!=nil{return result.Error}
   if result.RowsAffected!=1{return errors.New("device changed during bootstrap")}
-  return nil
+  return tx.Create(&models.DeviceAudit{UserID:userID,DeviceID:deviceID,Action:"trusted_bootstrap"}).Error
  })
 }
 
