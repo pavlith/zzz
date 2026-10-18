@@ -19,3 +19,11 @@ On migration error, stop and investigate; do not delete or manually rewrite `sch
 ## Verification
 
 `go test -race ./back/database ./back/api` covers schema repeat run, migration conflict and upgrade from a legacy baseline. Comprehensive disaster-recovery rehearsal, checksums of a real deployment backup and concurrent writer fault-injection are pending (M1-04/M6-02).
+
+## Automated verification added
+
+- `TestSQLiteVacuumBackupRestoreAcrossMigration` creates a legacy SQLite DB containing data, snapshots it with `VACUUM INTO`, opens the restored file, migrates it forward and verifies the old user and schema ledger. This is a reproducible local backup/restore test, not a full disaster recovery simulation.
+- `TestMigrationRejectsForeignKeyCorruption` detects an orphan reference using SQLite `foreign_key_check` and refuses to migrate an invalid database.
+- The migration-ledger table is now created using explicit `CREATE TABLE IF NOT EXISTS` SQL rather than GORM AutoMigrate.
+
+**M1-04 remains partial:** version 1 still uses GORM `AutoMigrate` to bootstrap the full application schema. An immutable SQL-only baseline, realistic upgrade fixtures and concurrent-writer stress testing remain necessary before treating database migrations as production ready.
