@@ -25,6 +25,7 @@ type pushRequest struct {
  Nonce []byte `json:"nonce"`
  Ciphertext []byte `json:"ciphertext"`
  CryptoVersion uint32 `json:"crypto_version"`
+ KeyEpoch uint64 `json:"key_epoch"`
 }
 
 // pushSync atomically applies one client mutation and records its idempotency key.
@@ -38,6 +39,11 @@ func(a *API) pushSync(w http.ResponseWriter,r *http.Request,userID string){
  if input.Type!="upsert"&&input.Type!="delete"{problem(w,400,"invalid_operation");return}
  if input.Type=="delete"&&(input.ItemID==""||input.ExpectedRevision==0){problem(w,400,"invalid_delete");return}
  if input.Type=="upsert"&&(len(input.Ciphertext)==0||len(input.Nonce)==0||input.CryptoVersion==0){problem(w,400,"invalid_ciphertext");return}
+ if input.KeyEpoch!=0 {
+  var vault models.Vault
+  if err:=a.db.First(&vault,"id = ?",vaultID).Error;err!=nil{failure(w,err);return}
+  if vault.KeyEpoch!=input.KeyEpoch{problem(w,409,"key_epoch_mismatch");return}
+ }
  if strings.TrimSpace(input.ItemID)==""&&input.ExpectedRevision!=0{problem(w,400,"invalid_revision");return}
  raw,_:=json.Marshal(input)
  sum:=sha256.Sum256(raw)
