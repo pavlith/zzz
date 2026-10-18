@@ -1,0 +1,7 @@
+# Historical Key Envelopes — read-only development API
+
+`GET /api/v1/vaults/:vault/key-envelopes/history?epoch=N` requires the caller's Vault Read permission. The epoch must be strictly positive and **less than** the current Vault `key_epoch`. The response contains only existing opaque `DeviceKeyEnvelope` records for the caller's own devices that are still verified, trusted and not revoked. Other users' devices, pending or revoked devices, current and future epochs are excluded. The response has `Cache-Control: no-store`.
+
+This endpoint is intentionally read-only. Current `GET /api/v1/vaults/:vault/key-envelopes` continues to list current-epoch envelopes. Historical item revisions already expose their `key_epoch` metadata, allowing clients to identify which past key is needed.
+
+**Not solved yet:** no rotation activation exists, there is no mechanism to rewrap historical keys for devices added later, no preservation/garbage-collection policy for retired device envelopes, and no cryptographic verification that historical ciphertext can actually be decrypted. Revoking a device prevents future envelope retrieval, but cannot erase keys or ciphertext previously downloaded by it. Existing development bearer tokens are not device-bound; therefore account-level authorization is not proof of the requesting physical device's identity. Production must require device-bound authorization and ensure history preservation before rotation may activate. Do not store real passwords.
