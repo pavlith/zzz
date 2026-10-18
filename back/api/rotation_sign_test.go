@@ -51,6 +51,13 @@ func TestSignedRotationManifest(t *testing.T){
  var approved int64
  if err:=db.Model(&models.RotationSignature{}).Where("rotation_id = ?",rotation.ID).Count(&approved).Error;err!=nil{t.Fatal(err)}
  if approved!=1{t.Fatalf("approval count: %d",approved)}
+ statusReq:=httptest.NewRequest("GET","/api/v1/vaults/v/rotation",nil)
+ statusReq.Header.Set("Authorization","Bearer "+token)
+ statusRec:=httptest.NewRecorder();server.ServeHTTP(statusRec,statusReq)
+ if statusRec.Code!=200{t.Fatalf("quorum status: %d",statusRec.Code)}
+ var status struct{Required uint32 `json:"required_approvals"`;Met bool `json:"quorum_met"`;Valid int `json:"valid_signature_count"`}
+ if err:=json.Unmarshal(statusRec.Body.Bytes(),&status);err!=nil{t.Fatal(err)}
+ if status.Required!=1||!status.Met||status.Valid!=1{t.Fatalf("unexpected quorum: %+v",status)}
  valid,err:=validateRotationSignatures(db,rotation);if err!=nil{t.Fatal(err)}
  if valid.Valid!=1||valid.Total!=1{t.Fatalf("valid approvals: %+v",valid)}
  if err:=db.Model(&models.Device{}).Where("id = ?","d").Update("revoked_at",now).Error;err!=nil{t.Fatal(err)}
