@@ -61,6 +61,7 @@ func New(db *gorm.DB) http.Handler {
  register(http.MethodPost,"/vaults/:vault/sync/push",a.pushSync)
  register(http.MethodGet,"/vaults/:vault/items",a.items)
  register(http.MethodPost,"/vaults/:vault/items",a.items)
+ register(http.MethodGet,"/vaults/:vault/items/:item/revisions",a.itemRevisions)
  register(http.MethodGet,"/vaults/:vault/items/:item",a.singleItem)
  register(http.MethodPut,"/vaults/:vault/items/:item",a.singleItem)
  return e
