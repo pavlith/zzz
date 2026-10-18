@@ -17,3 +17,9 @@ The signed message is UTF-8 bytes of `zzz-vault-rotation-approval-v1:<vault_id>:
 Rotation status now reports `valid_signature_count` and `invalid_signer_device_ids` in addition to the total `signature_count`. Stored approvals are verified again against current trusted, verified, nonrevoked device signing keys and the signer's current Vault Manage ACL. A revoked signer, removed Manage permission, changed key, corrupted signature or digest mismatch does not count as a valid approval.
 
 This is diagnostic only, not a quorum policy. The status never enables activation, and multi-query validation is not a substitute for atomic checks at commit time.
+
+## Quorum policy v1
+
+Each new rotation records `required_approvals = 1`, pinned at preparation time. Rotation status returns `required_approvals` and `quorum_met`; the latter is calculated from **currently valid** Ed25519 signatures, not the number of stored approvals. Revocation, lost Manage ACL or signing-key change can make the quorum false again.
+
+This is a conservative single-approver **development policy**, not a reviewed team-vault multi-party approval policy. Changing approval thresholds via caller input is not supported. There is still no activation endpoint. Production needs explicit workspace/group-specific quorum rules and safeguards against one account's devices impersonating multiple independent approvers.
