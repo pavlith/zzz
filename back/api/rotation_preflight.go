@@ -2,6 +2,9 @@ package api
 
 import (
  "net/http"
+ "crypto/sha256"
+ "encoding/hex"
+ "crypto/ed25519"
 
  "github.com/pavlith/zzz/back/acl"
  "github.com/pavlith/zzz/back/models"
@@ -14,6 +17,8 @@ type rotationPreflight struct {
  EnvelopesComplete bool `json:"envelopes_complete"`
  RequiredApprovals uint32 `json:"required_approvals"`
  ValidApprovals int `json:"valid_approvals"`
+ ValidEnvelopeAcks int `json:"valid_envelope_acks"`
+ RequiredEnvelopeAcks int `json:"required_envelope_acks"`
  QuorumMet bool `json:"quorum_met"`
  Blockers []string `json:"blockers"`
  CanActivate bool `json:"can_activate"`
@@ -43,8 +48,33 @@ func activationPreflight(db *gorm.DB,vaultID string)(rotationPreflight,error){
   if len(recipient.Invalid)>0{out.Blockers=append(out.Blockers,"recipients_invalid")}
   if len(recipient.Unlisted)>0{out.Blockers=append(out.Blockers,"recipients_unlisted")}
   if !out.QuorumMet{out.Blockers=append(out.Blockers,"quorum_not_met")}
+  var recipients []models.RotationRecipient
+  if err:=tx.Where("rotation_id = ?",rotation.ID).Find(&recipients).Error;err!=nil{return err}
+  out.RequiredEnvelopeAcks=len(recipients)
+  for _,recipient:=range recipients{
+   var ack models.RotationEnvelopeAck
+   if err:=tx.First(&ack,"rotation_id = ? AND device_id = ?",rotation.ID,recipient.DeviceID).Error;err!=nil{
+    if err==gorm.ErrRecordNotFound{continue};return err
+   }
+   var device models.Device
+   if err:=tx.First(&device,"id = ? AND user_id = ? AND verified_at IS NOT NULL AND trusted_at IS NOT NULL AND revoked_at IS NULL",recipient.DeviceID,recipient.UserID).Error;err!=nil{
+    if err==gorm.ErrRecordNotFound{continue};return err
+   }
+   signing:=sha256.Sum256(device.SigningPublicKey)
+   encryption:=sha256.Sum256(device.EncryptionPublicKey)
+   if hex.EncodeToString(signing[:])!=recipient.SigningKeySHA256||hex.EncodeToString(encryption[:])!=recipient.EncryptionKeySHA256{continue}
+   var envelope models.DeviceKeyEnvelope
+   if err:=tx.First(&envelope,"vault_id = ? AND device_id = ? AND key_epoch = ?",rotation.VaultID,recipient.DeviceID,rotation.ToEpoch).Error;err!=nil{
+    if err==gorm.ErrRecordNotFound{continue};return err
+   }
+   digest:=sha256.Sum256(envelope.Ciphertext)
+   if hex.EncodeToString(digest[:])!=ack.EnvelopeSHA256{continue}
+   if !ed25519.Verify(ed25519.PublicKey(device.SigningPublicKey),envelopeAckMessage(rotation,device.ID,ack.EnvelopeSHA256),ack.Signature){continue}
+   out.ValidEnvelopeAcks++
+  }
+  if out.RequiredEnvelopeAcks==0||out.ValidEnvelopeAcks!=out.RequiredEnvelopeAcks{out.Blockers=append(out.Blockers,"envelope_acknowledgements_missing")}
   // The key cryptographic proof and historical-key retention policies remain missing.
-  out.Blockers=append(out.Blockers,"envelope_decryptability_unverified","historical_key_access_unverified")
+  out.Blockers=append(out.Blockers,"client_decryption_claims_unverifiable","historical_key_access_unverified")
   return nil
  })
  return out,err
