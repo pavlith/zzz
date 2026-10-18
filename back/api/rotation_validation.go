@@ -16,6 +16,7 @@ type rotationValidation struct {
  Unlisted []string `json:"unlisted_device_ids"`
  EpochCurrent bool `json:"epoch_current"`
  Complete bool `json:"complete"`
+ ManifestValid bool `json:"manifest_valid"`
 }
 
 // validateRotation rechecks the manifest against live ACL, revocation and envelopes.
@@ -27,6 +28,7 @@ func validateRotation(db *gorm.DB,rotation models.VaultRotation)(rotationValidat
  var members []models.RotationRecipient
  if err:=db.Where("rotation_id = ?",rotation.ID).Order("device_id").Find(&members).Error;err!=nil{return out,err}
  out.Required=len(members)
+ out.ManifestValid=rotation.ManifestSHA256!=""&&manifestDigest(rotation,members)==rotation.ManifestSHA256
  for _,member:=range members{
   var device models.Device
   err:=db.First(&device,"id = ? AND user_id = ? AND verified_at IS NOT NULL AND trusted_at IS NOT NULL AND revoked_at IS NULL",member.DeviceID,member.UserID).Error
@@ -56,6 +58,6 @@ func validateRotation(db *gorm.DB,rotation models.VaultRotation)(rotationValidat
   if err!=nil{return out,err}
   if allowed{out.Unlisted=append(out.Unlisted,device.ID)}
  }
- out.Complete=out.EpochCurrent&&out.Required>0&&len(out.Missing)==0&&len(out.Invalid)==0&&len(out.Unlisted)==0
+ out.Complete=out.ManifestValid&&out.EpochCurrent&&out.Required>0&&len(out.Missing)==0&&len(out.Invalid)==0&&len(out.Unlisted)==0
  return out,nil
 }
