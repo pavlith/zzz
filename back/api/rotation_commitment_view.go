@@ -3,12 +3,20 @@ package api
 import (
  "crypto/sha256"
  "encoding/hex"
+ "encoding/binary"
+ "hash"
  "net/http"
 
  "github.com/pavlith/zzz/back/acl"
  "github.com/pavlith/zzz/back/models"
  "gorm.io/gorm"
 )
+
+func commitmentViewField(h hash.Hash,b []byte){
+ var n [8]byte
+ binary.BigEndian.PutUint64(n[:],uint64(len(b)))
+ _,_=h.Write(n[:]);_,_=h.Write(b)
+}
 
 type commitmentWitness struct {
  DeviceID string `json:"device_id"`
@@ -28,15 +36,15 @@ func rotationCommitmentView(tx *gorm.DB,rotation models.VaultRotation)(commitmen
  var rows []models.RotationCommitment
  if err:=tx.Where("rotation_id = ?",rotation.ID).Order("device_id").Find(&rows).Error;err!=nil{return out,err}
  h:=sha256.New()
- field(h,[]byte("zzz-rotation-commitment-view-v1"))
- field(h,[]byte(rotation.VaultID))
- field(h,[]byte(rotation.ID))
- field(h,[]byte(rotation.ManifestSHA256))
+ commitmentViewField(h,[]byte("zzz-rotation-commitment-view-v1"))
+ commitmentViewField(h,[]byte(rotation.VaultID))
+ commitmentViewField(h,[]byte(rotation.ID))
+ commitmentViewField(h,[]byte(rotation.ManifestSHA256))
  for _,row:=range rows{
-  field(h,[]byte(row.DeviceID))
-  field(h,[]byte(row.ManifestSHA256))
-  field(h,[]byte(row.KeyCommitment))
-  field(h,row.Signature)
+  commitmentViewField(h,[]byte(row.DeviceID))
+  commitmentViewField(h,[]byte(row.ManifestSHA256))
+  commitmentViewField(h,[]byte(row.KeyCommitment))
+  commitmentViewField(h,row.Signature)
   out.Entries=append(out.Entries,commitmentWitness{DeviceID:row.DeviceID,KeyCommitment:row.KeyCommitment,ManifestSHA256:row.ManifestSHA256,Signature:row.Signature})
  }
  out.ViewSHA256=hex.EncodeToString(h.Sum(nil))
