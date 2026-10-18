@@ -25,17 +25,13 @@ func applyMigrations(db *gorm.DB) error {
   if m.Version!=latest+1{return fmt.Errorf("non-contiguous schema migration version: %d",m.Version)}
   latest=m.Version
  }
- const current uint64=2
- if latest>current{return fmt.Errorf("database schema %d newer than server %d",latest,current)}
+ const current uint64=1
+ if latest>current{return fmt.Errorf("pre-v1 schema %d is unsupported (expected <= %d): reset the development database; automatic downgrade is disabled",latest,current)}
  migrations:=[]struct{
   version uint64
   run func(*gorm.DB)error
  }{
   {1,baselineSQL},
-  {2,func(tx *gorm.DB)error{
-   // Fail on duplicate prepared rotations rather than silently choosing one.
-   return tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_one_prepared_rotation_per_vault ON vault_rotations(vault_id) WHERE status = 'prepared'").Error
-  }},
  }
  for _,m:=range migrations{
   if m.version<=latest{continue}
