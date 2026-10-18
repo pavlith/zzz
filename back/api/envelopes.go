@@ -15,7 +15,7 @@ func (a *API) listKeyEnvelopes(w http.ResponseWriter, r *http.Request, userID st
  err := a.db.Model(&models.DeviceKeyEnvelope{}).
   Joins("JOIN devices ON devices.id = device_key_envelopes.device_id").
   Joins("JOIN vaults ON vaults.id = device_key_envelopes.vault_id").
-  Where("device_key_envelopes.vault_id = ? AND devices.user_id = ? AND devices.revoked_at IS NULL AND device_key_envelopes.key_epoch = vaults.key_epoch",vaultID,userID).
+  Where("device_key_envelopes.vault_id = ? AND devices.user_id = ? AND devices.revoked_at IS NULL AND devices.verified_at IS NOT NULL AND device_key_envelopes.key_epoch = vaults.key_epoch",vaultID,userID).
   Find(&records).Error
  if err != nil { failure(w,err);return }
  write(w,http.StatusOK,records)
@@ -37,7 +37,7 @@ func (a *API) createKeyEnvelope(w http.ResponseWriter,r *http.Request,userID str
  if err:=a.db.First(&vault,"id = ?",vaultID).Error;err!=nil {failure(w,err);return}
  if vault.KeyEpoch!=in.KeyEpoch {problem(w,409,"key_epoch_mismatch");return}
  var device models.Device
- if err:=a.db.First(&device,"id = ? AND revoked_at IS NULL",in.DeviceID).Error;err!=nil {failure(w,err);return}
+ if err:=a.db.First(&device,"id = ? AND revoked_at IS NULL AND verified_at IS NOT NULL",in.DeviceID).Error;err!=nil {failure(w,err);return}
  permitted,err:=acl.Allowed(a.db,device.UserID,vaultID,acl.Read)
  if err!=nil || !permitted {problem(w,404,"recipient_not_allowed");return}
  item:=models.DeviceKeyEnvelope{
