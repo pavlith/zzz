@@ -34,7 +34,7 @@ func applyMigrations(db *gorm.DB) error {
  if err:=checkSQLiteIntegrity(db);err!=nil{return err}
  // Create the tracking table before the migration transaction, because SQLite
  // AutoMigrate may rebuild tables during baseline creation.
- if err:=db.AutoMigrate(&schemaMigration{});err!=nil{return err}
+ if err:=db.Exec("CREATE TABLE IF NOT EXISTS schema_migrations (version integer PRIMARY KEY, applied_at datetime NOT NULL)").Error;err!=nil{return err}
  var applied []schemaMigration
  if err:=db.Order("version").Find(&applied).Error;err!=nil{return err}
  latest:=uint64(0)
