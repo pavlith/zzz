@@ -8,6 +8,10 @@
 - `POST /api/v1/vaults/:vault/key-envelopes`: submit one candidate-v1 signed envelope for a trusted device. Requires vault manage permission.
 - `POST /api/v1/vaults/:vault/key-envelopes/history/rewrap`: submit a historical candidate-v1 envelope with an independently verified signed rewrap operation. Requires vault manage permission and an authorized source device with possession of the historical epoch.
 
+## Response contract
+
+Successful create and list responses expose `id`, `vault_id`, `device_id`, `key_epoch`, `envelope` (the complete candidate-v1 JSON object) and `created_at`. The historical list uses the same DTO. Internal database fields `ciphertext` and `crypto_version` are not part of these response bodies. Corrupted stored candidate-v1 envelopes cause a server error rather than being returned as valid protocol objects.
+
 ## New-envelope request
 
 ```json
