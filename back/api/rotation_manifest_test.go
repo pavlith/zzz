@@ -3,6 +3,8 @@ package api
 import (
  "bytes"
  "encoding/json"
+ "encoding/hex"
+ "crypto/sha256"
  "net/http/httptest"
  "testing"
  "time"
