@@ -1,7 +1,7 @@
-# Vault key rotation: readiness v0
+# Vault key rotation — actual prototype state
 
-`GET /api/v1/vaults/:vault/rotation-readiness` requires an authenticated user with explicit Vault manage access. It reports `current_key_epoch`, `proposed_key_epoch`, and devices whose users have Vault read access and whose devices have completed possession proof and are not revoked.
+Earlier readiness-only documentation is superseded by the implementation: prepare, manifest-pinned recipients, signed approval, next-epoch envelope staging, history coverage and acknowledgements, commitment comparison, preflight, cancellation, initial transparency chain export.
 
-**This endpoint is read-only.** The response always sets `can_activate=false` with reason `trusted_device_approval_not_implemented`. It neither generates keys nor changes Vault epochs. The device `verified_at` property proves possession of a device signing key; it does **not** establish device trust or account-owner approval.
+**Activation is explicitly disabled**: authorized `POST /api/v1/vaults/:vault/rotation/activate` returns HTTP 409 `rotation_activation_not_implemented`; `GET /rotation/preflight` always reports `can_activate:false`. No active Vault `key_epoch` switch is implemented. Preflight metadata checks and device signatures cannot prove a recipient can decrypt the intended Vault Key or historical ciphertext.
 
-Before implementing key rotation, introduce authenticated trusted-device approval and a secure first-device bootstrap, bind production sessions to trusted devices, distribute authenticated new key envelopes to all recipients, define how retired and offline devices regain access, and ensure historical encrypted Items remain decryptable. Rotation requires a commit protocol that prevents partial activation. Do not treat this readiness endpoint as proof that rotation is safe.
+Detailed contracts: [rotation preflight](rotation-activation-preflight.md), [readiness/cancellation](rotation-readiness-and-cancellation.md), [signed manifest](signed-rotation-manifest.md), [historical envelopes](historical-key-envelopes.md), [transparency chain](rotation-transparency-chain.md), [activation contract](e2ee-rotation-activation-contract.md). Production activation and operational rollout are M3/M4 in [roadmap](roadmap-backend-web.md).
