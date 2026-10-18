@@ -36,7 +36,7 @@ func TestHistoricalKeyEnvelopes(t *testing.T){
  for i,dev:=range []string{trustedID,pendingID,otherID} {
   public:=[][]byte{trustedKey,pendingKey,otherKey}[i]
   wire:=candidateTestEnvelope(t,fixtureVaultID,dev,fixtureRotationID,fixtureSignerID,1,public,signer,candidateTestManifest())
-  record:=models.DeviceKeyEnvelope{ID:dev,VaultID:fixtureVaultID,DeviceID:dev,KeyEpoch:1,CryptoVersion:1,Ciphertext:wire}
+  record:=models.DeviceKeyEnvelope{ID:dev,VaultID:fixtureVaultID,DeviceID:dev,KeyEpoch:1,CryptoVersion:1,Envelope:wire}
   if err:=db.Create(&record).Error;err!=nil{t.Fatal(err)}
  }
  tok,err:=auth.Issue(db,"owner",time.Hour);if err!=nil{t.Fatal(err)}

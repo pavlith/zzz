@@ -19,7 +19,7 @@ type keyEnvelopeResponse struct {
 }
 
 func envelopeResponse(record models.DeviceKeyEnvelope) (keyEnvelopeResponse,error) {
- parsed,err:=parseCandidateEnvelope(record.Ciphertext,record.VaultID,record.DeviceID,record.KeyEpoch)
+ parsed,err:=parseCandidateEnvelope(record.Envelope,record.VaultID,record.DeviceID,record.KeyEpoch)
  if err!=nil{return keyEnvelopeResponse{},err}
  wire,err:=canonicalCandidateEnvelope(parsed)
  if err!=nil{return keyEnvelopeResponse{},err}

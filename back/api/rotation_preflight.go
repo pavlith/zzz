@@ -94,7 +94,7 @@ func activationPreflight(db *gorm.DB,vaultID string)(rotationPreflight,error){
    if err:=tx.First(&envelope,"vault_id = ? AND device_id = ? AND key_epoch = ?",rotation.VaultID,recipient.DeviceID,rotation.ToEpoch).Error;err!=nil{
     if err==gorm.ErrRecordNotFound{continue};return err
    }
-   digest:=sha256.Sum256(envelope.Ciphertext)
+   digest:=sha256.Sum256(envelope.Envelope)
    if hex.EncodeToString(digest[:])!=ack.EnvelopeSHA256{continue}
    if !ed25519.Verify(ed25519.PublicKey(device.SigningPublicKey),envelopeAckMessage(rotation,device.ID,ack.EnvelopeSHA256),ack.Signature){continue}
    out.ValidEnvelopeAcks++

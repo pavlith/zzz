@@ -33,7 +33,7 @@ func(a *API) acknowledgeRotationEnvelope(w http.ResponseWriter,r *http.Request,u
   if hex.EncodeToString(signing[:])!=recipient.SigningKeySHA256||hex.EncodeToString(encryption[:])!=recipient.EncryptionKeySHA256{return gorm.ErrRecordNotFound}
   var envelope models.DeviceKeyEnvelope
   if err:=tx.First(&envelope,"vault_id = ? AND device_id = ? AND key_epoch = ?",vaultID,device.ID,rotation.ToEpoch).Error;err!=nil{return err}
-  digest:=sha256.Sum256(envelope.Ciphertext)
+  digest:=sha256.Sum256(envelope.Envelope)
   if hex.EncodeToString(digest[:])!=input.EnvelopeSHA256{return gorm.ErrRecordNotFound}
   if !ed25519.Verify(ed25519.PublicKey(device.SigningPublicKey),envelopeAckMessage(rotation,device.ID,input.EnvelopeSHA256),input.Signature){return gorm.ErrRecordNotFound}
   return tx.Create(&models.RotationEnvelopeAck{RotationID:rotation.ID,DeviceID:device.ID,EnvelopeSHA256:input.EnvelopeSHA256,Signature:input.Signature}).Error

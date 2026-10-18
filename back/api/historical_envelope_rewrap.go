@@ -60,7 +60,7 @@ func(a *API) rewrapHistoricalEnvelope(w http.ResponseWriter,r *http.Request,user
   var existing int64
   if err:=tx.Model(&models.DeviceKeyEnvelope{}).Where("vault_id = ? AND device_id = ? AND key_epoch = ?",vaultID,input.SourceDeviceID,input.KeyEpoch).Count(&existing).Error;err!=nil{return err}
   if existing!=1{return gorm.ErrRecordNotFound}
-  return tx.Create(&models.DeviceKeyEnvelope{ID:uuid.NewString(),VaultID:vaultID,DeviceID:input.DeviceID,KeyEpoch:input.KeyEpoch,CryptoVersion:1,Ciphertext:ciphertext}).Error
+  return tx.Create(&models.DeviceKeyEnvelope{ID:uuid.NewString(),VaultID:vaultID,DeviceID:input.DeviceID,KeyEpoch:input.KeyEpoch,CryptoVersion:1,Envelope:ciphertext}).Error
  })
  if err!=nil{
   if err==errKeyEpochMismatch{problem(w,409,"historical_epoch_required");return}

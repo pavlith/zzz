@@ -34,7 +34,7 @@ func TestSignedHistoricalEnvelopeRewrap(t *testing.T){
   &models.VaultPermission{ID:"p",VaultID:fixtureVaultID,PrincipalType:"user",PrincipalID:"u",CanRead:true,CanManage:true},
   &models.Device{ID:sourceID,UserID:"u",Name:"Source",SigningPublicKey:pub,EncryptionPublicKey:bytes.Repeat([]byte{1},32),VerifiedAt:&now,TrustedAt:&now},
   &models.Device{ID:targetID,UserID:"u",Name:"Target",SigningPublicKey:bytes.Repeat([]byte{2},32),EncryptionPublicKey:recipient.PublicKey().Bytes(),VerifiedAt:&now,TrustedAt:&now},
-  &models.DeviceKeyEnvelope{ID:"old",VaultID:fixtureVaultID,DeviceID:sourceID,KeyEpoch:1,CryptoVersion:1,Ciphertext:bytes.Repeat([]byte{4},32)},
+  &models.DeviceKeyEnvelope{ID:"old",VaultID:fixtureVaultID,DeviceID:sourceID,KeyEpoch:1,CryptoVersion:1,Envelope:bytes.Repeat([]byte{4},32)},
  }{if err:=db.Create(obj).Error;err!=nil{t.Fatal(err)}}
  token,err:=auth.Issue(db,"u",time.Hour);if err!=nil{t.Fatal(err)}
  envelope,err:=candidate.Wrap(bytes.Repeat([]byte{5},32),recipient.PublicKey().Bytes(),key,candidate.Context{VaultID:fixtureVaultID,DeviceID:targetID,RotationID:fixtureRotationID,SignerDeviceID:sourceID,KeyEpoch:1,ManifestSHA256:candidateTestManifest()});if err!=nil{t.Fatal(err)}

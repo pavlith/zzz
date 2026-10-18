@@ -64,7 +64,7 @@ func (a *API) createKeyEnvelope(w http.ResponseWriter,r *http.Request,userID str
  }
  item:=models.DeviceKeyEnvelope{
   ID:uuid.NewString(),VaultID:vaultID,DeviceID:device.ID,
-  KeyEpoch:in.KeyEpoch,CryptoVersion:1,Ciphertext:ciphertext,
+  KeyEpoch:in.KeyEpoch,CryptoVersion:1,Envelope:ciphertext,
  }
  if err:=a.db.Create(&item).Error;err!=nil {failure(w,err);return}
  response,err:=envelopeResponse(item)

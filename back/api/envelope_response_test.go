@@ -10,7 +10,7 @@ import (
 func TestCandidateEnvelopeResponseContract(t *testing.T){
  recipient,signer:=candidateTestKeys(t)
  wire:=candidateTestEnvelope(t,fixtureVaultID,fixtureDeviceID,fixtureRotationID,fixtureSignerID,1,recipient,signer,candidateTestManifest())
- record:=models.DeviceKeyEnvelope{ID:"record",VaultID:fixtureVaultID,DeviceID:fixtureDeviceID,KeyEpoch:1,CryptoVersion:1,Ciphertext:wire}
+ record:=models.DeviceKeyEnvelope{ID:"record",VaultID:fixtureVaultID,DeviceID:fixtureDeviceID,KeyEpoch:1,CryptoVersion:1,Envelope:wire}
  result,err:=envelopeResponse(record);if err!=nil{t.Fatal(err)}
  if result.DeviceID!=fixtureDeviceID||len(result.Envelope)==0{t.Fatalf("invalid response: %+v",result)}
  b,err:=json.Marshal(result);if err!=nil{t.Fatal(err)}
@@ -25,6 +25,6 @@ func TestCandidateEnvelopeResponseContract(t *testing.T){
   if _,ok:=nested[field];!ok{t.Fatalf("candidate envelope missing %s",field)}
  }
  if _,ok:=obj["created_at"];!ok{t.Fatal("created_at omitted")}
- record.Ciphertext=[]byte("invalid")
+ record.Envelope=[]byte("invalid")
  if _,err:=envelopeResponse(record);err==nil{t.Fatal("corrupt stored envelope accepted")}
 }

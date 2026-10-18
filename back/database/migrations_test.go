@@ -31,8 +31,8 @@ func TestEnvelopeColumnMigrationPreservesExistingBytes(t *testing.T){
  if err:=db.Exec("ALTER TABLE device_key_envelopes RENAME COLUMN ciphertext TO envelope").Error;err!=nil{t.Fatal(err)}
  var record models.DeviceKeyEnvelope
  if err:=db.First(&record,"id = ?","old").Error;err!=nil{t.Fatal(err)}
- if string(record.Ciphertext)!="signed-envelope"{t.Fatalf("envelope changed: %q",record.Ciphertext)}
+ if string(record.Envelope)!="signed-envelope"{t.Fatalf("envelope changed: %q",record.Envelope)}
  if err:=db.Model(&record).Update("envelope",[]byte("updated-envelope")).Error;err!=nil{t.Fatal(err)}
  if err:=db.First(&record,"id = ?","old").Error;err!=nil{t.Fatal(err)}
- if string(record.Ciphertext)!="updated-envelope"{t.Fatalf("envelope update failed: %q",record.Ciphertext)}
+ if string(record.Envelope)!="updated-envelope"{t.Fatalf("envelope update failed: %q",record.Envelope)}
 }
