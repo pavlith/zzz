@@ -20,6 +20,10 @@ type rotationPreflight struct {
  ValidEnvelopeAcks int `json:"valid_envelope_acks"`
  RequiredEnvelopeAcks int `json:"required_envelope_acks"`
  QuorumMet bool `json:"quorum_met"`
+ KeyCommitmentConsensus bool `json:"key_commitment_consensus"`
+ KeyCommitmentConflict bool `json:"key_commitment_conflict"`
+ ValidKeyCommitments int `json:"valid_key_commitments"`
+ RequiredKeyCommitments int `json:"required_key_commitments"`
  Blockers []string `json:"blockers"`
  CanActivate bool `json:"can_activate"`
  RequiredHistoricalEpochs []uint64 `json:"required_historical_epochs"`
@@ -55,6 +59,14 @@ func activationPreflight(db *gorm.DB,vaultID string)(rotationPreflight,error){
   if !out.QuorumMet{out.Blockers=append(out.Blockers,"quorum_not_met")}
   var recipients []models.RotationRecipient
   if err:=tx.Where("rotation_id = ?",rotation.ID).Find(&recipients).Error;err!=nil{return err}
+  comparison,err:=compareRotationCommitments(tx,rotation,recipients)
+  if err!=nil{return err}
+  out.KeyCommitmentConsensus=comparison.Consensus
+  out.KeyCommitmentConflict=comparison.Conflicting
+  out.ValidKeyCommitments=comparison.Valid
+  out.RequiredKeyCommitments=comparison.Required
+  if comparison.Conflicting{out.Blockers=append(out.Blockers,"key_commitment_conflict")}
+  if !comparison.Consensus{out.Blockers=append(out.Blockers,"key_commitments_incomplete")}
   history,err:=historicalEnvelopeCoverage(tx,rotation,recipients)
   if err!=nil{return err}
   out.RequiredHistoricalEpochs=history.RequiredEpochs
