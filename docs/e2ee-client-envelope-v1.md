@@ -1,0 +1,11 @@
+# E2EE client envelope v1 (experimental)
+
+Go package: `pkgs/e2ee`. This is a client-side library for future Go-based clients; not wired to the Android/Web app or the existing server-side opaque-envelope protocol.
+
+`Wrap(vaultKey32, recipientX25519Public32, Context)` creates an ephemeral X25519 key pair, derives an AES-256-GCM key with HKDF-SHA256 (RFC 5869, zero salt, domain-separated info), and encrypts a 32-byte Vault Key with a fresh random 96-bit nonce. `Unwrap(envelope, recipientX25519Private32, expectedContext)` verifies the version, recipient public-key fingerprint, exact expected context and GCM authentication tag before returning key bytes. No plaintext key is sent to the server.
+
+Envelope JSON fields: `version`, `context` (`vault_id`, `rotation_id`, `device_id`, `key_epoch`), `recipient_key_sha256`, `ephemeral_public_key`, `nonce`, `ciphertext`. Byte arrays are base64 encoded by Go's JSON encoder. Context is included in a length-prefixed, domain-separated SHA-256 associated-data digest. Ephemeral public key is required for X25519 agreement; ciphertext authenticates the context.
+
+**Not production ready:** AES-GCM proves authenticity relative to the derived shared secret but does not authenticate the *sender's identity*. An attacker who knows a recipient public key can create a valid new envelope for an arbitrary different key. To avoid key-substitution attacks, require independently authenticated and signed rotation manifests and an authenticated, client-verifiable key commitment / consistency mechanism. Current server `crypto_version:1` ciphertext endpoints do not recognize or enforce this new JSON envelope structure. X25519 recipient identity provisioning and signing keys need careful separation, key transparency and external security review. Historical-key recovery, offline clients, secure memory erasure, mobile key storage and zero-knowledge decryption proof are not provided. Activation remains disabled.
+
+Tests cover roundtrip, JSON serialization, wrong private keys, changed Vault/rotation/device/epoch, ciphertext tampering, malformed keys and unsupported versions. Deterministic cross-language vectors should be added after the wire format is frozen and independently reviewed. Do not store real passwords in this prototype.
