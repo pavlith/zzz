@@ -6,6 +6,7 @@ import (
  "path/filepath"
  "strings"
  "github.com/pavlith/zzz/back/models"
+ "github.com/pavlith/zzz/back/auth"
  "gorm.io/driver/sqlite"
  "gorm.io/gorm"
 )
@@ -26,6 +27,6 @@ func Migrate(db *gorm.DB) error {
  return db.AutoMigrate(
   &models.User{},&models.Workspace{},&models.WorkspaceMember{},
   &models.Group{},&models.GroupMember{},&models.Vault{},
-  &models.VaultPermission{},&models.VaultKeyEnvelope{},&models.Item{},
+  &models.VaultPermission{},&models.VaultKeyEnvelope{},&models.Item{},&auth.Token{},
  )
 }
