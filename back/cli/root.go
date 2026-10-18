@@ -39,6 +39,7 @@ func Execute() error {
  }}
  create.Flags().StringVar(&email,"email","","User email")
  user.AddCommand(create);root.AddCommand(user)
+ root.AddCommand(bootstrapDeviceCommand(&configPath))
  root.AddCommand(&cobra.Command{Use:"serve",Short:"Start authenticated development HTTP API",RunE:func(cmd *cobra.Command,args []string)error{
   c,err:=config.Load(configPath);if err!=nil{return err}
   db,err:=database.Open(c.Database.DSN);if err!=nil{return err}
