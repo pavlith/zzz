@@ -9,6 +9,7 @@ on:
   pull_request:
     paths:
       - 'web/src/lib/crypto/**'
+      - 'pkgs/e2ee/candidatev1/**'
       - '.github/workflows/webcrypto.yml'
 jobs:
   test:
