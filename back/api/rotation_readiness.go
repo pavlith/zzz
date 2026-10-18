@@ -37,6 +37,6 @@ func (a *API) rotationReadiness(w http.ResponseWriter,r *http.Request,userID str
   "eligible_devices":eligible,
   "eligible_device_count":len(eligible),
   "can_activate":false,
-  "reason":"trusted_device_approval_not_implemented",
+  "reason":"rotation_activation_not_implemented",
  })
 }
