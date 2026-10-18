@@ -36,3 +36,10 @@ func TestEnvelopeColumnMigrationPreservesExistingBytes(t *testing.T){
  if err:=db.First(&record,"id = ?","old").Error;err!=nil{t.Fatal(err)}
  if string(record.Envelope)!="updated-envelope"{t.Fatalf("envelope update failed: %q",record.Envelope)}
 }
+
+func TestFreshMigrationUsesEnvelopeColumn(t *testing.T){
+ db,err:=Open(":memory:");if err!=nil{t.Fatal(err)}
+ if err:=Migrate(db);err!=nil{t.Fatal(err)}
+ if !db.Migrator().HasColumn(&models.DeviceKeyEnvelope{},"envelope"){t.Fatal("envelope column missing")}
+ if db.Migrator().HasColumn(&models.DeviceKeyEnvelope{},"ciphertext"){t.Fatal("legacy ciphertext column remains")}
+}
