@@ -1,6 +1,8 @@
 package api
 
 import (
+ "crypto/sha256"
+ "encoding/hex"
  "net/http"
 
  "github.com/google/uuid"
@@ -28,7 +30,9 @@ func(a *API) prepareRotation(w http.ResponseWriter,r *http.Request,userID string
    allowed,err:=acl.Allowed(tx,device.UserID,vaultID,acl.Read)
    if err!=nil{return err}
    if !allowed{continue}
-   if err:=tx.Create(&models.RotationRecipient{RotationID:out.ID,DeviceID:device.ID,UserID:device.UserID}).Error;err!=nil{return err}
+   signing:=sha256.Sum256(device.SigningPublicKey)
+   encryption:=sha256.Sum256(device.EncryptionPublicKey)
+   if err:=tx.Create(&models.RotationRecipient{RotationID:out.ID,DeviceID:device.ID,UserID:device.UserID,SigningKeySHA256:hex.EncodeToString(signing[:]),EncryptionKeySHA256:hex.EncodeToString(encryption[:])}).Error;err!=nil{return err}
   }
   return nil
  })
