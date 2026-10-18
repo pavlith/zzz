@@ -33,7 +33,7 @@ func New(db *gorm.DB) http.Handler {
  register:=func(method,path string,h handler){
   wrapped:=func(c echo.Context)error{
    r:=c.Request()
-   for _,key:=range []string{"workspace","group","vault","item"} {
+   for _,key:=range []string{"workspace","group","vault","item","device"} {
     if val:=c.Param(key);val!="" {r.SetPathValue(key,val)}
    }
    id:=c.Get(apimiddleware.UserIDKey).(string)
@@ -43,6 +43,9 @@ func New(db *gorm.DB) http.Handler {
   v1.Add(method,path,wrapped)
  }
  register(http.MethodGet,"/me",a.me)
+ register(http.MethodGet,"/devices",a.listDevices)
+ register(http.MethodPost,"/devices",a.createDevice)
+ register(http.MethodDelete,"/devices/:device",a.revokeDevice)
  register(http.MethodGet,"/workspaces",a.workspaces)
  register(http.MethodPost,"/workspaces",a.workspaces)
  register(http.MethodPost,"/workspaces/:workspace/groups",a.groups)
