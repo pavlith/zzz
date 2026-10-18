@@ -43,12 +43,12 @@ func TestAuthAndWorkspaceIsolation(t *testing.T){
  if got:=call("GET","/api/v1/vaults/"+vault.ID+"/items","",token).Code;got!=404{t.Fatalf("vault without grant got %d",got)}
  rec=call("POST","/api/v1/vaults/"+vault.ID+"/permissions",`{"principal_type":"user","principal_id":"alice","read":true,"write":true}`,token)
  if rec.Code!=201{t.Fatalf("grant got %d: %s",rec.Code,rec.Body)}
- rec=call("POST","/api/v1/vaults/"+vault.ID+"/items",`{"nonce":"bm9uY2U=","ciphertext":"Y2lwaGVydGV4dA==","crypto_version":1}`,token)
+ rec=call("POST","/api/v1/vaults/"+vault.ID+"/items",`{"nonce":"bm9uY2U=","ciphertext":"Y2lwaGVydGV4dA==","crypto_version":1,"key_epoch":1}`,token)
  if rec.Code!=201{t.Fatalf("item create got %d: %s",rec.Code,rec.Body)}
  var item models.Item
  if err:=json.Unmarshal(rec.Body.Bytes(),&item);err!=nil{t.Fatal(err)}
  path:="/api/v1/vaults/"+vault.ID+"/items/"+item.ID
- body:=`{"expected_revision":1,"nonce":"bm9uY2U=","ciphertext":"Y2lwaGVydGV4dA==","crypto_version":1}`
+ body:=`{"expected_revision":1,"nonce":"bm9uY2U=","ciphertext":"Y2lwaGVydGV4dA==","crypto_version":1,"key_epoch":1}`
  if got:=call("PUT",path,body,token).Code;got!=200{t.Fatalf("item update got %d",got)}
  if got:=call("PUT",path,body,token).Code;got!=409{t.Fatalf("revision conflict got %d",got)}
  if got:=call("GET",path,"",bobToken).Code;got!=404{t.Fatalf("cross-tenant read got %d",got)}
