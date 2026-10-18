@@ -49,6 +49,15 @@ func TestRotationRecipientManifest(t *testing.T) {
  var count int64
  if err:=db.Model(&models.RotationRecipient{}).Count(&count).Error;err!=nil{t.Fatal(err)}
  if count!=1{t.Fatalf("manifest size: %d",count)}
+ var rotation models.VaultRotation
+ if err:=db.First(&rotation,"vault_id = ? AND status = ?","v","prepared").Error;err!=nil{t.Fatal(err)}
+ if len(rotation.ManifestSHA256)!=64{t.Fatal("missing manifest digest")}
+ if err:=db.Model(&models.RotationRecipient{}).Where("rotation_id = ? AND device_id = ?",rotation.ID,"first").Update("signing_key_sha256","modified").Error;err!=nil{t.Fatal(err)}
+ tampered:=request("GET","/api/v1/vaults/v/rotation","")
+ if tampered.Code!=200{t.Fatalf("tampered status: %d",tampered.Code)}
+ var integrity struct{Valid bool `json:"manifest_valid"`;Complete bool `json:"envelopes_complete"`}
+ if err:=json.Unmarshal(tampered.Body.Bytes(),&integrity);err!=nil{t.Fatal(err)}
+ if integrity.Valid||integrity.Complete{t.Fatal("tampered recipient manifest considered valid")}
  if err:=db.Model(&models.Device{}).Where("id = ?","first").Update("encryption_public_key",bytes.Repeat([]byte{9},32)).Error;err!=nil{t.Fatal(err)}
  changed:=request("GET","/api/v1/vaults/v/rotation","")
  if changed.Code!=200{t.Fatalf("key drift status: %d",changed.Code)}
