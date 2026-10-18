@@ -125,3 +125,67 @@ export async function unwrap(
   if (!equal(digest, decode(envelope.vault_key_commitment, 32))) fail();
   return plaintext;
 }
+
+
+/**
+ * Experimental browser wrapping. The caller must independently authorize
+ * recipientPublicRaw and signerPrivate, and securely maintain their lifecycle.
+ * No recovery, key directory, or trusted manifest is implemented here.
+ */
+export async function wrap(
+  vaultKey: Uint8Array,
+  recipientPublicRaw: Uint8Array,
+  signerPrivate: CryptoKey,
+  context: ExpectedContext,
+): Promise<Envelope> {
+  if (vaultKey.length !== 32 || recipientPublicRaw.length !== 32 ||
+      signerPrivate.algorithm.name !== 'Ed25519' ||
+      !signerPrivate.usages.includes('sign')) fail();
+  const ephemeral = await crypto.subtle.generateKey('X25519', true, ['deriveBits']);
+  const ephemeralPublicRaw = new Uint8Array(
+    await crypto.subtle.exportKey('raw', ephemeral.publicKey));
+  const recipient = await crypto.subtle.importKey('raw', recipientPublicRaw,
+    'X25519', false, []);
+  const shared = new Uint8Array(await crypto.subtle.deriveBits(
+    { name: 'X25519', public: recipient }, ephemeral.privateKey, 256));
+  if (shared.every((x) => x === 0)) fail();
+  const fingerprint = new Uint8Array(
+    await crypto.subtle.digest('SHA-256', recipientPublicRaw));
+  const e: Envelope = {
+    protocol: PROTOCOL, suite: SUITE,
+    vault_id: context.vault_id, device_id: context.device_id,
+    rotation_id: context.rotation_id, signer_device_id: context.signer_device_id,
+    key_epoch: context.key_epoch, manifest_sha256: context.manifest_sha256,
+    recipient_key_sha256: encode(fingerprint),
+    ephemeral_public_key: encode(ephemeralPublicRaw),
+    nonce: '', ciphertext: '', vault_key_commitment: '', signature: '',
+  };
+  // Validate caller-controlled metadata before constructing signed ciphertext.
+  if (![e.vault_id, e.device_id, e.rotation_id, e.signer_device_id]
+    .every((v) => UUID.test(v)) ||
+    !Number.isSafeInteger(e.key_epoch) || e.key_epoch < 1) fail();
+  decode(e.manifest_sha256, 32);
+  const commit = canonical({
+    protocol: e.protocol, vault_id: e.vault_id, key_epoch: e.key_epoch,
+    manifest_sha256: e.manifest_sha256, key: encode(vaultKey),
+  });
+  e.vault_key_commitment = encode(new Uint8Array(
+    await crypto.subtle.digest('SHA-256', domain('vault-key-commitment', commit))));
+  const ikm = await crypto.subtle.importKey('raw', shared, 'HKDF', false, ['deriveKey']);
+  const kek = await crypto.subtle.deriveKey({
+    name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(32),
+    info: domain('envelope-kek', canonical(metadata(e, false))),
+  }, ikm, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+  const nonce = crypto.getRandomValues(new Uint8Array(12));
+  e.nonce = encode(nonce);
+  e.ciphertext = encode(new Uint8Array(await crypto.subtle.encrypt({
+    name: 'AES-GCM', iv: nonce,
+    additionalData: domain('recipient-envelope-aad', canonical(metadata(e, true))),
+    tagLength: 128,
+  }, kek, vaultKey)));
+  const signed = { ...metadata(e, true), nonce: e.nonce, ciphertext: e.ciphertext };
+  e.signature = encode(new Uint8Array(await crypto.subtle.sign('Ed25519',
+    signerPrivate, domain('signed-envelope', canonical(signed)))));
+  validate(e);
+  return e;
+}
