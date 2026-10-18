@@ -51,4 +51,13 @@ func TestSignedRotationManifest(t *testing.T){
  var approved int64
  if err:=db.Model(&models.RotationSignature{}).Where("rotation_id = ?",rotation.ID).Count(&approved).Error;err!=nil{t.Fatal(err)}
  if approved!=1{t.Fatalf("approval count: %d",approved)}
+ valid,err:=validateRotationSignatures(db,rotation);if err!=nil{t.Fatal(err)}
+ if valid.Valid!=1||valid.Total!=1{t.Fatalf("valid approvals: %+v",valid)}
+ if err:=db.Model(&models.Device{}).Where("id = ?","d").Update("revoked_at",now).Error;err!=nil{t.Fatal(err)}
+ revoked,err:=validateRotationSignatures(db,rotation);if err!=nil{t.Fatal(err)}
+ if revoked.Valid!=0||len(revoked.InvalidDeviceIDs)!=1{t.Fatalf("revoked signer counted: %+v",revoked)}
+ if err:=db.Model(&models.Device{}).Where("id = ?","d").Update("revoked_at",nil).Error;err!=nil{t.Fatal(err)}
+ if err:=db.Model(&models.Device{}).Where("id = ?","d").Update("signing_public_key",bytes.Repeat([]byte{9},32)).Error;err!=nil{t.Fatal(err)}
+ changed,err:=validateRotationSignatures(db,rotation);if err!=nil{t.Fatal(err)}
+ if changed.Valid!=0{t.Fatalf("changed signer key counted: %+v",changed)}
 }
