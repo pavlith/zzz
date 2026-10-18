@@ -51,6 +51,11 @@ func TestHistoricalKeyEnvelopes(t *testing.T){
  var rows []keyEnvelopeResponse
  if err:=json.Unmarshal(good.Body.Bytes(),&rows);err!=nil{t.Fatal(err)}
  if len(rows)!=1||rows[0].DeviceID!=trustedID{t.Fatalf("leaked envelopes: %+v",rows)}
+ if len(rows[0].Envelope)==0{t.Fatal("missing candidate envelope")}
+ var raw []map[string]json.RawMessage
+ if err:=json.Unmarshal(good.Body.Bytes(),&raw);err!=nil{t.Fatal(err)}
+ if _,ok:=raw[0]["ciphertext"];ok{t.Fatal("legacy ciphertext leaked into response")}
+ if _,ok:=raw[0]["crypto_version"];ok{t.Fatal("legacy crypto_version leaked into response")}
  if got:=get(tok,"?epoch=3").Code;got!=400{t.Fatalf("active epoch status: %d",got)}
  if got:=get(tok,"?epoch=4").Code;got!=400{t.Fatalf("future epoch status: %d",got)}
  if got:=get(stranger,"?epoch=1").Code;got!=404{t.Fatalf("unauthorized history: %d",got)}
