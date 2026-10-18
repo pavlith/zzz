@@ -2,8 +2,8 @@ package database
 
 import "gorm.io/gorm"
 
-// baselineDDL is frozen SQLite SQL matching the original GORM v1 schema.
-// New schema changes must be added as numbered migrations, never edited here.
+// baselineDDL is the consolidated, unreleased pre-v1 SQLite schema.
+// Keep it in sync with models and tests until the first public release.
 var baselineDDL=[]string{
 "CREATE TABLE IF NOT EXISTS users (id text PRIMARY KEY, email text NOT NULL, display_name text, created_at datetime)",
 "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email)",
@@ -55,6 +55,7 @@ var baselineDDL=[]string{
 "CREATE TABLE IF NOT EXISTS rotation_commitments (rotation_id text, device_id text, manifest_sha256 text NOT NULL, key_commitment text NOT NULL, signature blob NOT NULL, created_at datetime, PRIMARY KEY(rotation_id,device_id))",
 "CREATE TABLE IF NOT EXISTS rotation_log_entries (id integer PRIMARY KEY AUTOINCREMENT, rotation_id text NOT NULL, device_id text NOT NULL, manifest_sha256 text NOT NULL, key_commitment text NOT NULL, signature blob NOT NULL, prev_hash text NOT NULL, entry_hash text NOT NULL)",
 "CREATE INDEX IF NOT EXISTS idx_rotation_log_entries_rotation_id ON rotation_log_entries(rotation_id)",
+"CREATE UNIQUE INDEX IF NOT EXISTS idx_one_prepared_rotation_per_vault ON vault_rotations(vault_id) WHERE status = 'prepared'",
 }
 
 func baselineSQL(tx *gorm.DB)error{
