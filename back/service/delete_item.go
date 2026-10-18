@@ -20,11 +20,14 @@ func(s *Service) DeleteItem(actorID,vaultID,itemID string,expected uint64)(uint6
  revision:=expected+1
  err=s.DB.Transaction(func(tx *gorm.DB)error{
   now:=time.Now().UTC()
+  var vault models.Vault
+  if err:=tx.First(&vault,"id = ?",vaultID).Error;err!=nil{return err}
   res:=tx.Model(&models.Item{}).
    Where("id = ? AND vault_id = ? AND revision = ? AND deleted_at IS NULL",itemID,vaultID,expected).
    Updates(map[string]interface{}{"revision":revision,"deleted_at":now,"updated_at":now})
   if res.Error!=nil{return res.Error}
   if res.RowsAffected!=1{return ErrRevisionConflict}
+  if err:=tx.Create(&models.ItemRevision{VaultID:vaultID,ItemID:itemID,Revision:revision,KeyEpoch:vault.KeyEpoch,Deleted:true}).Error;err!=nil{return err}
   return tx.Create(&models.SyncEvent{VaultID:vaultID,ItemID:itemID,Revision:revision,Operation:"delete"}).Error
  })
  if err!=nil{return 0,err}
