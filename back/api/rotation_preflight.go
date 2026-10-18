@@ -22,6 +22,9 @@ type rotationPreflight struct {
  QuorumMet bool `json:"quorum_met"`
  Blockers []string `json:"blockers"`
  CanActivate bool `json:"can_activate"`
+ RequiredHistoricalEpochs []uint64 `json:"required_historical_epochs"`
+ MissingHistoricalEnvelopes []missingHistoricalEnvelope `json:"missing_historical_envelopes"`
+ HistoricalEnvelopesComplete bool `json:"historical_envelopes_complete"`
 }
 
 // activationPreflight checks a consistent database snapshot. It deliberately
@@ -50,6 +53,12 @@ func activationPreflight(db *gorm.DB,vaultID string)(rotationPreflight,error){
   if !out.QuorumMet{out.Blockers=append(out.Blockers,"quorum_not_met")}
   var recipients []models.RotationRecipient
   if err:=tx.Where("rotation_id = ?",rotation.ID).Find(&recipients).Error;err!=nil{return err}
+  history,err:=historicalEnvelopeCoverage(tx,rotation,recipients)
+  if err!=nil{return err}
+  out.RequiredHistoricalEpochs=history.RequiredEpochs
+  out.MissingHistoricalEnvelopes=history.Missing
+  out.HistoricalEnvelopesComplete=history.Complete
+  if !history.Complete{out.Blockers=append(out.Blockers,"historical_envelopes_missing")}
   out.RequiredEnvelopeAcks=len(recipients)
   for _,recipient:=range recipients{
    var ack models.RotationEnvelopeAck
