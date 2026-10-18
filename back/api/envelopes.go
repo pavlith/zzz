@@ -39,6 +39,11 @@ func (a *API) createKeyEnvelope(w http.ResponseWriter,r *http.Request,userID str
   var rotations int64
   if err:=a.db.Model(&models.VaultRotation{}).Where("vault_id = ? AND from_epoch = ? AND to_epoch = ? AND status = ?",vaultID,vault.KeyEpoch,in.KeyEpoch,"prepared").Count(&rotations).Error;err!=nil{failure(w,err);return}
   if rotations!=1 {problem(w,409,"key_epoch_mismatch");return}
+  var rotation models.VaultRotation
+  if err:=a.db.Where("vault_id = ? AND from_epoch = ? AND to_epoch = ? AND status = ?",vaultID,vault.KeyEpoch,in.KeyEpoch,"prepared").First(&rotation).Error;err!=nil{failure(w,err);return}
+  var member int64
+  if err:=a.db.Model(&models.RotationRecipient{}).Where("rotation_id = ? AND device_id = ?",rotation.ID,in.DeviceID).Count(&member).Error;err!=nil{failure(w,err);return}
+  if member!=1{problem(w,409,"recipient_not_in_rotation");return}
  }
  var device models.Device
  if err:=a.db.First(&device,"id = ? AND revoked_at IS NULL AND verified_at IS NOT NULL AND trusted_at IS NOT NULL",in.DeviceID).Error;err!=nil {failure(w,err);return}
