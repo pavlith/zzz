@@ -6,6 +6,7 @@ import (
  "crypto/ed25519"
  "crypto/sha256"
  "encoding/json"
+ "encoding/base64"
  "testing"
 )
 
@@ -35,5 +36,13 @@ func TestDeterministicEnvelope(t *testing.T) {
  if !bytes.Equal(encodedA,encodedB){t.Fatal("deterministic fixture diverged")}
  recovered,err:=Unwrap(a,recipient.Bytes(),signer.Public().(ed25519.PublicKey),c)
  if err!=nil||!bytes.Equal(recovered,key){t.Fatalf("fixture decrypt: %v",err)}
- t.Logf("candidate-v1 deterministic JSON fixture: %s",encodedA)
+ vector,err:=json.Marshal(map[string]any{
+  "envelope":a,
+  "recipient_private_key":base64.RawURLEncoding.EncodeToString(recipient.Bytes()),
+  "recipient_public_key":base64.RawURLEncoding.EncodeToString(recipient.PublicKey().Bytes()),
+  "signer_public_key":base64.RawURLEncoding.EncodeToString(signer.Public().(ed25519.PublicKey)),
+  "vault_key":base64.RawURLEncoding.EncodeToString(key),
+ })
+ if err!=nil{t.Fatal(err)}
+ t.Logf("CANDIDATE_V1_VECTOR=%s",vector)
 }
