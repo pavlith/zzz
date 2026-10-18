@@ -41,3 +41,9 @@ The server's `back/api/envelopes.go` and `historical_envelope_rewrap.go` current
 The historical endpoints additionally enforce device trust, epoch bounds, source signatures and existing-epoch possession; these checks are not interchangeable with candidate-v1 cryptographic verification. Keep the endpoints until a single replacement storage and API contract is implemented with tests. Before first release, choose whether to replace `crypto_version` with an explicit protocol identifier and validate the exact candidate envelope shape, while leaving independent signer trust to clients. Do not remove ACL or epoch checks.
 
 Old client crypto documentation is now marked retired; it no longer advertises deleted functions.
+
+## CI regression after strict API cutover
+
+Go CI fails on older rotation tests because they submit legacy `crypto_version/ciphertext` requests and use non-UUID fixture identifiers. Do not weaken `candidatev1.Parse` or re-enable legacy payloads just to make those tests pass. Update the shared rotation test fixtures to real canonical UUIDs, construct valid signed candidate-v1 envelopes and hash their canonical stored JSON for acknowledgement tests. Historical rewrap tests need the same migration. This remains an **open CI blocker**; do not claim backend readiness.
+
+The new-envelope write path additionally checks that `recipient_key_sha256` equals SHA-256 of the trusted device's registered X25519 public key. Signature verification and manifest authorization still require independent client-side trust checks.
