@@ -35,7 +35,7 @@ func Issue(db *gorm.DB,userID string,ttl time.Duration)(string,error){
 // IssueForDevice creates a development session restricted to a verified device.
 func IssueForDevice(db *gorm.DB,userID,deviceID string,ttl time.Duration)(string,error){
  var device models.Device
- if err:=db.Where("id = ? AND user_id = ? AND verified_at IS NOT NULL AND revoked_at IS NULL",deviceID,userID).First(&device).Error;err!=nil{return "",errors.New("device not verified")}
+ if err:=db.Where("id = ? AND user_id = ? AND verified_at IS NOT NULL AND trusted_at IS NOT NULL AND revoked_at IS NULL",deviceID,userID).First(&device).Error;err!=nil{return "",errors.New("device not trusted")}
  b:=make([]byte,32)
  if _,err:=rand.Read(b);err!=nil{return "",err}
  raw:="zzz_"+base64.RawURLEncoding.EncodeToString(b)
@@ -51,7 +51,7 @@ func Authenticate(db *gorm.DB,header string)(string,error){
  if err!=nil{return "",errors.New("unauthorized")}
  if token.DeviceID!=nil {
   var d models.Device
-  if err:=db.Where("id = ? AND user_id = ? AND verified_at IS NOT NULL AND revoked_at IS NULL",*token.DeviceID,token.UserID).First(&d).Error;err!=nil{return "",errors.New("unauthorized")}
+  if err:=db.Where("id = ? AND user_id = ? AND verified_at IS NOT NULL AND trusted_at IS NOT NULL AND revoked_at IS NULL",*token.DeviceID,token.UserID).First(&d).Error;err!=nil{return "",errors.New("unauthorized")}
  }
  var u models.User
  if err:=db.Select("id").First(&u,"id = ?",token.UserID).Error;err!=nil{return "",errors.New("unauthorized")}
