@@ -27,3 +27,5 @@
 
 ## Maintenance rules
 When shipping any change: update the relevant subsystem spec + OpenAPI when available + relevant roadmap checkbox, link tests and reflect current security limitations. A past milestone spec must never imply deployment readiness merely because a prototype was merged.
+
+- [Pre-v1 legacy retirement audit](pre-v1-legacy-audit.md) — removed incompatible crypto implementations; schema, API and docs cleanup still open.
