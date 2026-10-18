@@ -23,8 +23,7 @@ func TestDeterministicEnvelope(t *testing.T) {
  SignerDeviceID:"42345678-1234-1234-1234-123456789abc",
  KeyEpoch:3,ManifestSHA256:manifest}
  key:=bytes.Repeat([]byte{0x41},32)
- // X25519 GenerateKey consumes 32 bytes, followed by a 12-byte GCM nonce.
- entropy:=append(bytes.Repeat([]byte{0x51},32),bytes.Repeat([]byte{0x61},12)...)
+ // crypto/ecdh GenerateKey may consume an additional random byte; provide ample\n // identical bytes to keep the fixture deterministic regardless of read offset.\n entropy:=bytes.Repeat([]byte{0x51},256)
  a,err:=wrapWithRandom(bytes.NewReader(entropy),key,recipient.PublicKey().Bytes(),signer,c)
  if err!=nil{t.Fatal(err)}
  b,err:=wrapWithRandom(bytes.NewReader(entropy),key,recipient.PublicKey().Bytes(),signer,c)
