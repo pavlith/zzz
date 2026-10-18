@@ -21,7 +21,7 @@ func (a *API) rotationReadiness(w http.ResponseWriter,r *http.Request,userID str
  err:=a.db.Model(&models.Device{}).
   Select("devices.id AS device_id, devices.user_id AS user_id").
   Joins("JOIN workspace_members wm ON wm.user_id = devices.user_id AND wm.workspace_id = ?",vault.WorkspaceID).
-  Where("devices.verified_at IS NOT NULL AND devices.revoked_at IS NULL").
+  Where("devices.verified_at IS NOT NULL AND devices.trusted_at IS NOT NULL AND devices.revoked_at IS NULL").
   Order("devices.id").Scan(&candidates).Error
  if err!=nil{failure(w,err);return}
  eligible:=make([]recipient,0,len(candidates))
