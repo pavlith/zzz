@@ -43,3 +43,14 @@ func TestFreshMigrationUsesEnvelopeColumn(t *testing.T){
  if !db.Migrator().HasColumn(&models.DeviceKeyEnvelope{},"envelope"){t.Fatal("envelope column missing")}
  if db.Migrator().HasColumn(&models.DeviceKeyEnvelope{},"ciphertext"){t.Fatal("legacy ciphertext column remains")}
 }
+
+func TestEnvelopeMigrationIsIdempotentWithStoredRecord(t *testing.T){
+ db,err:=Open(":memory:");if err!=nil{t.Fatal(err)}
+ if err:=Migrate(db);err!=nil{t.Fatal(err)}
+ record:=models.DeviceKeyEnvelope{ID:"record",VaultID:"vault",DeviceID:"device",KeyEpoch:1,CryptoVersion:1,Envelope:[]byte("signed-envelope")}
+ if err:=db.Create(&record).Error;err!=nil{t.Fatal(err)}
+ if err:=Migrate(db);err!=nil{t.Fatalf("repeat migration: %v",err)}
+ var got models.DeviceKeyEnvelope
+ if err:=db.First(&got,"id = ?","record").Error;err!=nil{t.Fatal(err)}
+ if string(got.Envelope)!="signed-envelope"{t.Fatalf("envelope changed on repeat migration: %q",got.Envelope)}
+}
