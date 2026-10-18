@@ -24,5 +24,7 @@ func(a *API) historicalKeyEnvelopes(w http.ResponseWriter,r *http.Request,userID
   Where("device_key_envelopes.vault_id = ? AND device_key_envelopes.key_epoch = ? AND devices.user_id = ? AND devices.verified_at IS NOT NULL AND devices.trusted_at IS NOT NULL AND devices.revoked_at IS NULL",vaultID,epoch,userID).
   Order("device_key_envelopes.device_id").Find(&rows).Error
  if err!=nil{failure(w,err);return}
- write(w,200,rows)
+ responses,err:=envelopeResponses(rows)
+ if err!=nil{problem(w,500,"invalid_stored_envelope");return}
+ write(w,200,responses)
 }
