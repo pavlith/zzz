@@ -12,7 +12,6 @@ import (
  "encoding/base64"
  "encoding/binary"
  "encoding/json"
- "errors"
  "io"
 )
 
@@ -129,4 +128,3 @@ func Unwrap(e Envelope,recipientPrivate []byte,expectedSigner ed25519.PublicKey,
  return plain,nil
 }
 
-var _ = errors.Is
