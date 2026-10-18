@@ -13,7 +13,7 @@
 
 ## Actual baseline
 
-**Backend prototype:** Go/Echo, GORM/SQLite; CLI/bootstrap, development bearer sessions, trust/device proofs and approvals, workspaces/groups/vault ACL, opaque items and immutable revisions, sync push/pull and consistent snapshots, per-device current/historical Key Envelopes, signed staged rotation with preflight/quorum/history coverage, commitment comparisons and initial hash-chain export. Tests exist; see CI. **Rotation activation deliberately returns HTTP 409**; `can_activate=false`. **Web client: NOT STARTED**. **E2EE library:** experimental Go `pkgs/e2ee` X25519/HKDF/AES-GCM, signed envelope and commitment; not wired to server or a browser.
+**Backend prototype:** Go/Echo, GORM/SQLite; CLI/bootstrap, development bearer sessions, trust/device proofs and approvals, workspaces/groups/vault ACL, opaque items and immutable revisions, sync push/pull and consistent snapshots, per-device current/historical Key Envelopes, signed staged rotation with preflight/quorum/history coverage, commitment comparisons and initial hash-chain export. Tests exist; see CI. **Rotation activation deliberately returns HTTP 409**; `can_activate=false`. **Web app: NOT STARTED** (experimental TypeScript WebCrypto module and Node tests exist, but no Svelte application UI). **E2EE library:** `pkgs/e2ee/candidatev1` and `web/src/lib/crypto/candidate-v1.ts`; bidirectional Go ↔ WebCrypto tests passed in CI. Removed incompatible pre-release `pkgs/e2ee` implementations; not integrated into the server trust model.
 
 ## Dependency-ordered milestones and tasks
 
@@ -28,7 +28,7 @@
 - [x] M1-01 Go service, healthcheck, basic CLI and SQLite schema — prototype.
 - [x] M1-02 Vault/workspace/group/ACL/item/revision/sync core — prototype.
 - [x] M1-03 Development CI Go test/race — available, but must verify latest runs.
-- [ ] M1-04 Replace AutoMigrate with numbered forward/rollback migrations, schema constraints/FK integrity and migration upgrade tests. **Partial:** numbered v1 compatibility baseline/v2 prepared-rotation unique index, idempotence, legacy schema upgrade/data preservation, duplicate-rotation failure/retry and SQLite integrity/FK checks. **Still open:** full SQL baseline, tested backup restore, downgrade policy, concurrency/foreign-key schema audit. See [migration runbook](sqlite-migrations-and-recovery.md).
+- [ ] M1-04 Replace AutoMigrate with numbered forward/rollback migrations, schema constraints/FK integrity and migration upgrade tests. **Partial:** consolidated single pre-v1 SQL baseline with prepared-rotation uniqueness, idempotence, explicit rejection of old v2 development ledgers, backup/restore and SQLite integrity/FK checks. Legacy upgrade tests removed because no public release exists. **Still open:** concurrency/foreign-key schema audit, release migration policy and verification of latest CI. See [migration runbook](sqlite-migrations-and-recovery.md).
 - [ ] M1-05 Extract routes into domain services/DTOs, stable validation and structured typed errors; OpenAPI generation, contract tests.
 - [ ] M1-06 Add database isolation/concurrency tests, transaction retry strategy, unique prepared-rotation constraint, immutable/audited history guarantees.
 - [ ] M1-07 Request IDs, redacted structured logs, tracing/metrics, health/readiness, graceful shutdown, configuration/secrets and TLS reverse proxy guidance.
@@ -103,3 +103,7 @@ An authenticated user can safely onboard two independently verified devices; cre
 - M0-03, M0-04: candidate decisions captured in [ADR authentication](adr-authentication-and-recovery.md) and [ADR E2EE](adr-e2ee-contract.md); they are **not frozen or production approved**.
 - M1-04: schema migration ledger and numbered baseline/index steps introduced in `back/database/migrations.go`; remaining production gates above are explicitly open.
 - Web: directory contains an experimental crypto candidate under `web/src/lib/crypto`, **not a complete SvelteKit web app**. Avoid treating M5 as fully absent or complete without checking the actual files.
+
+## Pre-v1 cleanup note (2026-10-18)
+
+Legacy Go `pkgs/e2ee` encryption/wrapper deleted; obsolete docs marked retired. Backend `crypto_version:1` opaque-envelope endpoints and historical rotation remain unresolved: do not infer candidate-v1 compatibility. Consolidated SQLite baseline rejects old development ledgers. See [legacy audit](pre-v1-legacy-audit.md). The prototype is not approved for real passwords.
