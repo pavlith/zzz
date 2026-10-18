@@ -4,6 +4,7 @@ on:
     branches: [dev, main]
     paths:
       - 'web/src/lib/crypto/**'
+      - 'pkgs/e2ee/candidatev1/**'
       - '.github/workflows/webcrypto.yml'
   pull_request:
     paths:
@@ -14,8 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
       - name: Verify experimental TypeScript module and parser fixtures
-        run: node --disable-warning=ExperimentalWarning --test web/src/lib/crypto/candidate-v1.test.mjs
+        run: node --disable-warning=ExperimentalWarning --test web/src/lib/crypto/*.test.mjs
