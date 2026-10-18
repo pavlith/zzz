@@ -69,3 +69,18 @@ func TestUpgradeFromVersionOnePreservesEnvelope(t *testing.T){
  var count int64
  if err:=db.Model(&schemaMigration{}).Count(&count).Error;err!=nil||count!=2{t.Fatalf("unexpected migration ledger: %d %v",count,err)}
 }
+
+func TestFailedEnvelopeUpgradeDoesNotAdvanceMigrationLedger(t *testing.T){
+ db,err:=Open(":memory:");if err!=nil{t.Fatal(err)}
+ if err:=db.Exec("CREATE TABLE schema_migrations (version integer PRIMARY KEY, applied_at datetime NOT NULL)").Error;err!=nil{t.Fatal(err)}
+ if err:=db.Exec("INSERT INTO schema_migrations(version,applied_at) VALUES(1,CURRENT_TIMESTAMP)").Error;err!=nil{t.Fatal(err)}
+ // A damaged version-one database lacks the table required by migration two.
+ if err:=Migrate(db);err==nil{t.Fatal("migration unexpectedly succeeded without device envelope table")}
+ var count int64
+ if err:=db.Model(&schemaMigration{}).Count(&count).Error;err!=nil{t.Fatal(err)}
+ if count!=1{t.Fatalf("failed migration advanced ledger to %d entries",count)}
+ // Restoring the missing legacy table must allow the same migration to retry.
+ if err:=db.Exec("CREATE TABLE device_key_envelopes (id text PRIMARY KEY, vault_id text, device_id text, key_epoch integer, crypto_version integer, ciphertext blob, created_at datetime)").Error;err!=nil{t.Fatal(err)}
+ if err:=Migrate(db);err!=nil{t.Fatalf("retry migration: %v",err)}
+ if !db.Migrator().HasColumn(&models.DeviceKeyEnvelope{},"envelope"){t.Fatal("retry did not rename envelope column")}
+}
