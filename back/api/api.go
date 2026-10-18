@@ -10,7 +10,7 @@ import (
  "strings"
  
  "github.com/pavlith/zzz/back/acl"
- "github.com/pavlith/zzz/back/auth"
+ apimiddleware "github.com/pavlith/zzz/back/api/middleware"
  "github.com/pavlith/zzz/back/models"
  "github.com/pavlith/zzz/back/service"
  "gorm.io/gorm"
@@ -29,14 +29,14 @@ func New(db *gorm.DB) http.Handler {
   return c.JSON(http.StatusOK,map[string]string{"status":"ok"})
  })
  v1:=e.Group("/api/v1")
+ v1.Use(apimiddleware.RequireBearer(a.db))
  register:=func(method,path string,h handler){
   wrapped:=func(c echo.Context)error{
    r:=c.Request()
    for _,key:=range []string{"workspace","group","vault","item"} {
     if val:=c.Param(key);val!="" {r.SetPathValue(key,val)}
    }
-   id,err:=auth.Authenticate(a.db,r.Header.Get("Authorization"))
-   if err!=nil{return c.JSON(http.StatusUnauthorized,map[string]string{"error":"unauthorized"})}
+   id:=c.Get(apimiddleware.UserIDKey).(string)
    h(c.Response(),r,id)
    return nil
   }
@@ -56,13 +56,6 @@ func New(db *gorm.DB) http.Handler {
  return e
 }
 type handler func(http.ResponseWriter,*http.Request,string)
-func (a *API)secure(h handler)http.HandlerFunc{
- return func(w http.ResponseWriter,r *http.Request){
-  id,err:=auth.Authenticate(a.db,r.Header.Get("Authorization"))
-  if err!=nil {problem(w,401,"unauthorized");return}
-  h(w,r,id)
- }
-}
 func decode(r *http.Request,v any)error{
  d:=json.NewDecoder(io.LimitReader(r.Body,1<<20));d.DisallowUnknownFields()
  if err:=d.Decode(v);err!=nil{return err}
