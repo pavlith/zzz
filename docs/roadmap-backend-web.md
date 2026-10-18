@@ -28,7 +28,7 @@
 - [x] M1-01 Go service, healthcheck, basic CLI and SQLite schema — prototype.
 - [x] M1-02 Vault/workspace/group/ACL/item/revision/sync core — prototype.
 - [x] M1-03 Development CI Go test/race — available, but must verify latest runs.
-- [ ] M1-04 Replace AutoMigrate with numbered forward/rollback migrations, schema constraints/FK integrity and migration upgrade tests. **Partial:** numbered v1 compatibility baseline/v2 prepared-rotation unique index, idempotence test; rollback, full SQL baseline, legacy-upgrade/restore testing and FK audit remain.
+- [ ] M1-04 Replace AutoMigrate with numbered forward/rollback migrations, schema constraints/FK integrity and migration upgrade tests. **Partial:** numbered v1 compatibility baseline/v2 prepared-rotation unique index, idempotence, legacy schema upgrade/data preservation, duplicate-rotation failure/retry and SQLite integrity/FK checks. **Still open:** full SQL baseline, tested backup restore, downgrade policy, concurrency/foreign-key schema audit. See [migration runbook](sqlite-migrations-and-recovery.md).
 - [ ] M1-05 Extract routes into domain services/DTOs, stable validation and structured typed errors; OpenAPI generation, contract tests.
 - [ ] M1-06 Add database isolation/concurrency tests, transaction retry strategy, unique prepared-rotation constraint, immutable/audited history guarantees.
 - [ ] M1-07 Request IDs, redacted structured logs, tracing/metrics, health/readiness, graceful shutdown, configuration/secrets and TLS reverse proxy guidance.
