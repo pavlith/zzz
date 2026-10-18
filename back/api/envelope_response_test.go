@@ -19,6 +19,12 @@ func TestCandidateEnvelopeResponseContract(t *testing.T){
  if _,ok:=obj["ciphertext"];ok{t.Fatal("legacy ciphertext leaked")}
  if _,ok:=obj["crypto_version"];ok{t.Fatal("legacy crypto version leaked")}
  if _,ok:=obj["envelope"];!ok{t.Fatal("candidate envelope omitted")}
+ var nested map[string]json.RawMessage
+ if err:=json.Unmarshal(obj["envelope"],&nested);err!=nil{t.Fatal(err)}
+ for _,field:=range []string{"protocol","suite","vault_id","device_id","rotation_id","key_epoch","recipient_key_sha256","ephemeral_public_key","nonce","ciphertext","manifest_sha256","vault_key_commitment","signer_device_id","signature"}{
+  if _,ok:=nested[field];!ok{t.Fatalf("candidate envelope missing %s",field)}
+ }
+ if _,ok:=obj["created_at"];!ok{t.Fatal("created_at omitted")}
  record.Ciphertext=[]byte("invalid")
  if _,err:=envelopeResponse(record);err==nil{t.Fatal("corrupt stored envelope accepted")}
 }
