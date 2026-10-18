@@ -25,6 +25,8 @@ func New(db *gorm.DB) http.Handler {
  e.Use(middleware.Recover())
  e.Use(middleware.BodyLimit("1M"))
  e.Use(middleware.Secure())
+ e.POST("/api/v1/auth/device/challenge",func(c echo.Context)error{a.sessionChallenge(c.Response(),c.Request());return nil})
+ e.POST("/api/v1/auth/device/session",func(c echo.Context)error{a.createDeviceSession(c.Response(),c.Request());return nil})
  e.GET("/healthz",func(c echo.Context)error{
   return c.JSON(http.StatusOK,map[string]string{"status":"ok"})
  })
