@@ -1,6 +1,8 @@
 package cli
 
 import (
+ "crypto/sha256"
+ "encoding/hex"
  "errors"
  "fmt"
  "time"
@@ -32,18 +34,27 @@ func bootstrapFirstDevice(db *gorm.DB,userID,deviceID string) error {
 }
 
 func bootstrapDeviceCommand(configPath *string)*cobra.Command{
- var userID,deviceID string
+ var userID,deviceID,signingFingerprint,encryptionFingerprint string
  command:=&cobra.Command{Use:"bootstrap-device",Short:"Locally trust first verified device (operator only)",RunE:func(cmd *cobra.Command,args []string)error{
   c,err:=config.Load(*configPath);if err!=nil{return err}
   db,err:=database.Open(c.Database.DSN);if err!=nil{return err}
   if err:=database.Migrate(db);err!=nil{return err}
+  var device models.Device
+  if err:=db.First(&device,"id = ? AND user_id = ?",deviceID,userID).Error;err!=nil{return err}
+  signing:=sha256.Sum256(device.SigningPublicKey)
+  encryption:=sha256.Sum256(device.EncryptionPublicKey)
+  if hex.EncodeToString(signing[:])!=signingFingerprint||hex.EncodeToString(encryption[:])!=encryptionFingerprint{return errors.New("provided public key fingerprints do not match")}
   if err:=bootstrapFirstDevice(db,userID,deviceID);err!=nil{return err}
   _,err=fmt.Fprintf(cmd.OutOrStdout(),"trusted first device %s for user %s\n",deviceID,userID)
   return err
  }}
  command.Flags().StringVar(&userID,"user","","Existing account identifier")
  command.Flags().StringVar(&deviceID,"device","","Verified device identifier")
+ command.Flags().StringVar(&signingFingerprint,"signing-sha256","","Expected SHA-256 of raw signing public key (hex)")
+ command.Flags().StringVar(&encryptionFingerprint,"encryption-sha256","","Expected SHA-256 of raw encryption public key (hex)")
  _=command.MarkFlagRequired("user")
  _=command.MarkFlagRequired("device")
+ _=command.MarkFlagRequired("signing-sha256")
+ _=command.MarkFlagRequired("encryption-sha256")
  return command
 }
