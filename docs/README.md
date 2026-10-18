@@ -18,7 +18,7 @@
 `consistent-snapshot.md`, `item-revisions.md`, `item-write-epoch.md`, `key-envelopes-api.md`, `sync-concurrency.md`, `sync-protocol.md`, `sync-push.md`, `sync-snapshot.md`. **Backend contracts require production invariants and browser E2E tests.**
 
 ## E2EE, device keys and rotation
-`e2ee-client-envelope-v1.md`, `e2ee-verified-envelope.md`, `e2ee-commitment-consensus.md`, `e2ee-commitment-consensus.md`, `e2ee-rotation-activation-contract.md`, `historical-key-envelopes.md`, `vault-key-rotation.md`, `rotation-activation-preflight.md`, `rotation-commitment-peer-comparison.md`, `rotation-readiness-and-cancellation.md`, `rotation-recipient-manifest.md`, `rotation-staging.md`, `rotation-transparency-chain.md`, `signed-rotation-manifest.md`. **Rotation activation intentionally blocked; hash chain is not independently witnessed transparency.**
+`e2ee-client-envelope-v1.md`, `e2ee-verified-envelope.md`, `e2ee-commitment-consensus.md`, `e2ee-rotation-activation-contract.md`, `historical-key-envelopes.md`, `vault-key-rotation.md`, `rotation-activation-preflight.md`, `rotation-commitment-peer-comparison.md`, `rotation-readiness-and-cancellation.md`, `rotation-recipient-manifest.md`, `rotation-staging.md`, `rotation-transparency-chain.md`, `signed-rotation-manifest.md`. **Rotation activation intentionally blocked; hash chain is not independently witnessed transparency.**
 
 ## Architecture history
 `echo-migration.md` documents a completed framework transition; retain as historical context rather than outstanding work.
