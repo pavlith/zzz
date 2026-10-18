@@ -48,6 +48,8 @@ func New(db *gorm.DB) http.Handler {
  register(http.MethodDelete,"/devices/:device",a.revokeDevice)
  register(http.MethodPost,"/devices/:device/challenge",a.issueDeviceChallenge)
  register(http.MethodPost,"/devices/:device/verify",a.verifyDevice)
+ register(http.MethodPost,"/devices/:device/approval-challenge",a.approvalChallenge)
+ register(http.MethodPost,"/devices/:device/approve",a.approveDevice)
  register(http.MethodGet,"/workspaces",a.workspaces)
  register(http.MethodPost,"/workspaces",a.workspaces)
  register(http.MethodPost,"/workspaces/:workspace/groups",a.groups)
