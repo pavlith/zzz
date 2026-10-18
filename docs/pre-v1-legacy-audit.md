@@ -33,3 +33,11 @@ Only `dev` is modified; `main` remains release-gated.
 ## Local development database reset (destructive)
 
 After backing up any data needed for debugging, stop the server and remove the **development-only** SQLite DB and its `-wal` and `-shm` companions, then restart. The server will initialize the single pre-v1 baseline. Do not run this against a database containing real credentials; none should be used with the prototype. The application must not automatically delete a database on version mismatch.
+
+## Opaque API contract finding (2026-10-18)
+
+The server's `back/api/envelopes.go` and `historical_envelope_rewrap.go` currently accept `crypto_version:1` plus an opaque base64 JSON `ciphertext` byte array (32–65536 bytes), without parsing the candidate-v1 signed JSON envelope. `back/models/device_envelope.go` persists this as a BLOB. Candidate-v1 has a separate `protocol` and `suite` with mandatory signature, commitment, recipient fingerprint and manifest. These **are not equivalent**. The server must not label opaque v1 blobs as verified candidate-v1.
+
+The historical endpoints additionally enforce device trust, epoch bounds, source signatures and existing-epoch possession; these checks are not interchangeable with candidate-v1 cryptographic verification. Keep the endpoints until a single replacement storage and API contract is implemented with tests. Before first release, choose whether to replace `crypto_version` with an explicit protocol identifier and validate the exact candidate envelope shape, while leaving independent signer trust to clients. Do not remove ACL or epoch checks.
+
+Old client crypto documentation is now marked retired; it no longer advertises deleted functions.
