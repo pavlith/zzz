@@ -65,6 +65,7 @@ func New(db *gorm.DB) http.Handler {
  register(http.MethodGet,"/vaults/:vault/rotation-readiness",a.rotationReadiness)
  register(http.MethodPost,"/vaults/:vault/rotation/prepare",a.prepareRotation)
  register(http.MethodGet,"/vaults/:vault/rotation",a.rotationStatus)
+ register(http.MethodPost,"/vaults/:vault/rotation/cancel",a.cancelRotation)
  register(http.MethodGet,"/vaults/:vault/key-envelopes",a.listKeyEnvelopes)
  register(http.MethodPost,"/vaults/:vault/key-envelopes",a.createKeyEnvelope)
  register(http.MethodGet,"/vaults/:vault/snapshot",a.snapshot)
