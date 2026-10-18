@@ -1,6 +1,6 @@
 # SQLite migration and recovery runbook (development)
 
-Current schema version: **2**. `back/database/migrations.go` stores applied versions in `schema_migrations` and runs each upgrade within a SQLite transaction. `v1` is a frozen compatibility baseline using GORM AutoMigrate for current legacy development databases; `v2` creates a partial unique index allowing at most one prepared rotation per Vault. Repeat application is idempotent. Failed v2 does not record version 2 or delete duplicated rows. Existing development DBs are upgraded in place, retaining user and rotation records (covered by tests).
+Current schema version: **2**. `back/database/migrations.go` stores applied versions in `schema_migrations` and runs each upgrade within a SQLite transaction. `v1` is now an explicit SQL-only baseline for fresh databases and additive compatibility with existing development schemas; `v2` creates a partial unique index allowing at most one prepared rotation per Vault. Repeat application is idempotent. Failed v2 does not record version 2 or delete duplicated rows. Existing development DBs are upgraded in place, retaining user and rotation records (covered by tests).
 
 **Important:** This is not yet a full production SQL-only migration system. SQL-defined v1 baseline, downgrade scripts, upgrade from a representative real backup, cross-version restore tests, SQLite FK constraints and full security audit remain open. Do not run production upgrades on irreplaceable data.
 
@@ -26,4 +26,4 @@ On migration error, stop and investigate; do not delete or manually rewrite `sch
 - `TestMigrationRejectsForeignKeyCorruption` detects an orphan reference using SQLite `foreign_key_check` and refuses to migrate an invalid database.
 - The migration-ledger table is now created using explicit `CREATE TABLE IF NOT EXISTS` SQL rather than GORM AutoMigrate.
 
-**M1-04 remains partial:** version 1 still uses GORM `AutoMigrate` to bootstrap the full application schema. An immutable SQL-only baseline, realistic upgrade fixtures and concurrent-writer stress testing remain necessary before treating database migrations as production ready.
+**M1-04 verification remains open:** the SQL-only baseline has been added. GORM AutoMigrate is retained only in legacy upgrade test fixtures. CI parity, realistic prior-version DB fixtures, schema constraint/FK audit and concurrent-writer stress tests still gate production readiness.
