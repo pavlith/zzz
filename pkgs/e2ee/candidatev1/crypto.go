@@ -75,11 +75,16 @@ func contextMatches(e Envelope,c Context)bool{
  e.KeyEpoch==c.KeyEpoch&&e.ManifestSHA256==encoded(c.ManifestSHA256[:])
 }
 func Wrap(vaultKey, recipientPublic []byte, signerPrivate ed25519.PrivateKey, c Context)(Envelope,error){
+ return wrapWithRandom(rand.Reader,vaultKey,recipientPublic,signerPrivate,c)
+}
+
+// wrapWithRandom is test-only deterministic entropy injection; production Wrap uses crypto/rand.
+func wrapWithRandom(random io.Reader,vaultKey, recipientPublic []byte, signerPrivate ed25519.PrivateKey, c Context)(Envelope,error){
  var e Envelope
  if len(vaultKey)!=32||len(recipientPublic)!=32||len(signerPrivate)!=ed25519.PrivateKeySize{return e,ErrInvalid}
  curve:=ecdh.X25519()
  recipient,err:=curve.NewPublicKey(recipientPublic);if err!=nil{return e,ErrInvalid}
- ephemeral,err:=curve.GenerateKey(rand.Reader);if err!=nil{return e,err}
+ ephemeral,err:=curve.GenerateKey(random);if err!=nil{return e,err}
  shared,err:=ephemeral.ECDH(recipient);if err!=nil{return e,ErrInvalid}
  fingerprint:=sha256.Sum256(recipientPublic)
  e=Envelope{Protocol:Protocol,Suite:Suite,VaultID:c.VaultID,DeviceID:c.DeviceID,
@@ -95,7 +100,7 @@ func Wrap(vaultKey, recipientPublic []byte, signerPrivate ed25519.PrivateKey, c 
  key:=hkdf(shared,domain("envelope-kek",infoBytes))
  block,err:=aes.NewCipher(key);if err!=nil{return Envelope{},err}
  aead,err:=cipher.NewGCM(block);if err!=nil{return Envelope{},err}
- nonce:=make([]byte,12);if _,err=io.ReadFull(rand.Reader,nonce);err!=nil{return Envelope{},err}
+ nonce:=make([]byte,12);if _,err=io.ReadFull(random,nonce);err!=nil{return Envelope{},err}
  e.Nonce=encoded(nonce)
  e.Ciphertext=encoded(aead.Seal(nil,nonce,vaultKey,domain("recipient-envelope-aad",aadBytes)))
  message,err:=signed(e);if err!=nil{return Envelope{},err}
