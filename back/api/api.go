@@ -5,7 +5,6 @@ import (
  "errors"
  "io"
  "net/http"
- "strconv"
  "strings"
  
  "github.com/pavlith/zzz/back/acl"
@@ -136,4 +135,3 @@ func (a *API)singleItem(w http.ResponseWriter,r *http.Request,id string){
  if err:=a.svc.PutItem(id,&item,in.ExpectedRevision);err!=nil{failure(w,err);return}
  write(w,200,map[string]uint64{"revision":item.Revision})
 }
-var _=strconv.Itoa
