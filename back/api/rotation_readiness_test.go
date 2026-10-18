@@ -22,7 +22,7 @@ func TestRotationReadiness(t *testing.T){
   &models.WorkspaceMember{WorkspaceID:"w",UserID:"owner",Role:"owner"},
   &models.Vault{ID:"v",WorkspaceID:"w",Name:"Vault",KeyEpoch:2},
   &models.VaultPermission{ID:"p",VaultID:"v",PrincipalType:"user",PrincipalID:"owner",CanRead:true,CanManage:true},
-  &models.Device{ID:"d",UserID:"owner",Name:"Device",VerifiedAt:&now,SigningPublicKey:make([]byte,32),EncryptionPublicKey:make([]byte,32)},
+  &models.Device{ID:"d",UserID:"owner",Name:"Device",VerifiedAt:&now,TrustedAt:&now,SigningPublicKey:make([]byte,32),EncryptionPublicKey:make([]byte,32)},
   &models.Device{ID:"d2",UserID:"other",Name:"Other",VerifiedAt:&now,SigningPublicKey:make([]byte,32),EncryptionPublicKey:make([]byte,32)},
  }{if err:=db.Create(v).Error;err!=nil{t.Fatal(err)}}
  owner,_:=auth.Issue(db,"owner",time.Hour)
