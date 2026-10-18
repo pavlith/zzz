@@ -39,7 +39,8 @@ func(a *API) pushSync(w http.ResponseWriter,r *http.Request,userID string){
  if input.Type!="upsert"&&input.Type!="delete"{problem(w,400,"invalid_operation");return}
  if input.Type=="delete"&&(input.ItemID==""||input.ExpectedRevision==0){problem(w,400,"invalid_delete");return}
  if input.Type=="upsert"&&(len(input.Ciphertext)==0||len(input.Nonce)==0||input.CryptoVersion==0){problem(w,400,"invalid_ciphertext");return}
- if input.KeyEpoch!=0 {
+ if input.KeyEpoch==0 {problem(w,400,"key_epoch_required");return}
+ {
   var vault models.Vault
   if err:=a.db.First(&vault,"id = ?",vaultID).Error;err!=nil{failure(w,err);return}
   if vault.KeyEpoch!=input.KeyEpoch{problem(w,409,"key_epoch_mismatch");return}
