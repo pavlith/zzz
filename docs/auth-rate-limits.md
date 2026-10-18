@@ -1,3 +1,5 @@
+> **Status (2026-10-18): development/prototype subsystem note.** Not a production-ready guarantee. Track outstanding work and acceptance criteria in [the canonical backend + web roadmap](roadmap-backend-web.md). In particular, web is not implemented, production authentication and E2EE integration remain open, and Vault key rotation activation is disabled.
+
 # Anonymous device-auth rate limits (development)
 
 The two public endpoints `POST /api/v1/auth/device/challenge` and `POST /api/v1/auth/device/session` share an in-process, per-remote-IP budget of ten attempts per rolling fixed 60-second window. When exhausted, they return HTTP 429 `rate_limited` with `Retry-After: 60`. Only the direct TCP peer address is used: request-supplied proxy headers such as X-Forwarded-For are intentionally not trusted.
