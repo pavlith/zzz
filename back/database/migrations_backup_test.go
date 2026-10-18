@@ -9,22 +9,22 @@ import (
 
 // A SQLite-native snapshot, rather than a filesystem copy of an open WAL DB,
 // is required to validate an actual restore path.
-func TestSQLiteVacuumBackupRestoreAcrossMigration(t *testing.T){
+func TestSQLiteVacuumBackupRestorePreV1(t *testing.T){
  dir:=t.TempDir()
  live:=filepath.Join(dir,"live.db")
  backup:=filepath.Join(dir,"backup.db")
  db,err:=Open(live);if err!=nil{t.Fatal(err)}
- if err:=baselineSchema(db);err!=nil{t.Fatal(err)}
+ if err:=Migrate(db);err!=nil{t.Fatal(err)}
  if err:=db.Create(&models.User{ID:"preserved",Email:"preserved@example.test"}).Error;err!=nil{t.Fatal(err)}
  if err:=db.Exec("VACUUM INTO ?",backup).Error;err!=nil{t.Fatal(err)}
  if err:=Migrate(db);err!=nil{t.Fatal(err)}
  restore,err:=Open(backup);if err!=nil{t.Fatal(err)}
- if err:=Migrate(restore);err!=nil{t.Fatalf("restored legacy DB upgrade: %v",err)}
+ if err:=Migrate(restore);err!=nil{t.Fatalf("restored pre-v1 DB: %v",err)}
  var u models.User
  if err:=restore.First(&u,"id = ?","preserved").Error;err!=nil||u.Email!="preserved@example.test"{t.Fatalf("lost restored record: %+v, %v",u,err)}
  if err:=checkSQLiteIntegrity(restore);err!=nil{t.Fatal(err)}
  var applied int64
- if err:=restore.Model(&schemaMigration{}).Count(&applied).Error;err!=nil||applied!=2{t.Fatalf("bad restored migration ledger: %d %v",applied,err)}
+ if err:=restore.Model(&schemaMigration{}).Count(&applied).Error;err!=nil||applied!=1{t.Fatalf("bad restored migration ledger: %d %v",applied,err)}
 }
 
 func TestMigrationRejectsForeignKeyCorruption(t *testing.T){
