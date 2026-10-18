@@ -32,7 +32,10 @@ func (a *API) createDevice(w http.ResponseWriter, r *http.Request, userID string
   ID: uuid.NewString(), UserID: userID, Name: input.Name,
   EncryptionPublicKey: input.EncryptionPublicKey, SigningPublicKey: input.SigningPublicKey,
  }
- if err := a.db.Create(&device).Error; err != nil { failure(w, err); return }
+ if err := a.db.Transaction(func(tx *gorm.DB)error{
+  if err:=tx.Create(&device).Error;err!=nil{return err}
+  return tx.Create(&models.DeviceAudit{UserID:userID,DeviceID:device.ID,Action:"registered"}).Error
+ }); err != nil { failure(w, err); return }
  write(w, http.StatusCreated, device)
 }
 
@@ -44,7 +47,8 @@ func (a *API) revokeDevice(w http.ResponseWriter, r *http.Request, userID string
   if result.Error!=nil{return result.Error}
   if result.RowsAffected!=1{return gorm.ErrRecordNotFound}
   if err:=tx.Model(&auth.Token{}).Where("device_id = ? AND revoked_at IS NULL",deviceID).Update("revoked_at",now).Error;err!=nil{return err}
-  return tx.Where("device_id = ?",deviceID).Delete(&models.DeviceKeyEnvelope{}).Error
+  if err:=tx.Where("device_id = ?",deviceID).Delete(&models.DeviceKeyEnvelope{}).Error;err!=nil{return err}
+  return tx.Create(&models.DeviceAudit{UserID:userID,DeviceID:deviceID,Action:"revoked"}).Error
  })
  if err!=nil{failure(w,err);return}
  write(w,http.StatusOK,map[string]bool{"ok":true})
