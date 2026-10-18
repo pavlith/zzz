@@ -1,3 +1,5 @@
+> **Status (2026-10-18): development/prototype subsystem note.** Not a production-ready guarantee. Track outstanding work and acceptance criteria in [the canonical backend + web roadmap](roadmap-backend-web.md). In particular, web is not implemented, production authentication and E2EE integration remain open, and Vault key rotation activation is disabled.
+
 # Device trust state machine (incomplete)
 
 Devices have separate timestamps: `verified_at` means that the client demonstrated possession of its Ed25519 private key, while `trusted_at` means that device enrollment has been approved. `revoked_at` prevents further use.
