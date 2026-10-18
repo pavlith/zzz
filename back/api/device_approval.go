@@ -48,7 +48,7 @@ func(a *API) approveDevice(w http.ResponseWriter,r *http.Request,userID string) 
   result=tx.Model(&models.Device{}).Where("id = ? AND user_id = ? AND verified_at IS NOT NULL AND trusted_at IS NULL AND revoked_at IS NULL",target.ID,userID).Update("trusted_at",now)
   if result.Error!=nil{return result.Error}
   if result.RowsAffected!=1{return gorm.ErrRecordNotFound}
-  return nil
+  return tx.Create(&models.DeviceAudit{UserID:userID,DeviceID:target.ID,Action:"trusted_approved"}).Error
  })
  if err!=nil{problem(w,409,"approval_conflict");return}
  write(w,200,map[string]bool{"trusted":true})
