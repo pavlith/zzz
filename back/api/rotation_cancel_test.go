@@ -40,6 +40,11 @@ func TestRotationReadinessAndCancellation(t *testing.T) {
  if len(state.Missing)!=1||state.Missing[0]!="d"||state.Complete{t.Fatalf("unexpected readiness %+v",state)}
  envelope:=`{"device_id":"d","key_epoch":2,"crypto_version":1,"ciphertext":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="}`
  if got:=call("POST","/api/v1/vaults/v/key-envelopes",envelope).Code;got!=201{t.Fatalf("stage: %d",got)}
+ preflight:=call("GET","/api/v1/vaults/v/rotation/preflight","")
+ if preflight.Code!=200{t.Fatalf("preflight: %d %s",preflight.Code,preflight.Body)}
+ var check struct{CanActivate bool `json:"can_activate"`;Blockers []string `json:"blockers"`;EnvelopesComplete bool `json:"envelopes_complete"`}
+ if err:=json.Unmarshal(preflight.Body.Bytes(),&check);err!=nil{t.Fatal(err)}
+ if check.CanActivate||!check.EnvelopesComplete||len(check.Blockers)==0{t.Fatalf("unsafe preflight: %+v",check)}
  if got:=call("POST","/api/v1/vaults/v/rotation/cancel","").Code;got!=200{t.Fatalf("cancel: %d",got)}
  if got:=call("POST","/api/v1/vaults/v/rotation/cancel","").Code;got!=404{t.Fatalf("duplicate cancel: %d",got)}
  var vault models.Vault
