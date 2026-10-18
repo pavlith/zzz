@@ -63,6 +63,10 @@ func TestSignedRotationManifest(t *testing.T){
  if err:=db.Model(&models.Device{}).Where("id = ?","d").Update("revoked_at",now).Error;err!=nil{t.Fatal(err)}
  revoked,err:=validateRotationSignatures(db,rotation);if err!=nil{t.Fatal(err)}
  if revoked.Valid!=0||len(revoked.InvalidDeviceIDs)!=1{t.Fatalf("revoked signer counted: %+v",revoked)}
+ revokedStatus:=httptest.NewRecorder();server.ServeHTTP(revokedStatus,statusReq)
+ var after struct{Met bool `json:"quorum_met"`}
+ if err:=json.Unmarshal(revokedStatus.Body.Bytes(),&after);err!=nil{t.Fatal(err)}
+ if after.Met{t.Fatal("revoked signature satisfied quorum")}
  if err:=db.Model(&models.Device{}).Where("id = ?","d").Update("revoked_at",nil).Error;err!=nil{t.Fatal(err)}
  if err:=db.Model(&models.Device{}).Where("id = ?","d").Update("signing_public_key",bytes.Repeat([]byte{9},32)).Error;err!=nil{t.Fatal(err)}
  changed,err:=validateRotationSignatures(db,rotation);if err!=nil{t.Fatal(err)}
