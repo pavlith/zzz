@@ -58,7 +58,7 @@ func TestRotationEnvelopeAcknowledgement(t *testing.T){
  var info struct{Valid int `json:"valid_envelope_acks"`;Required int `json:"required_envelope_acks"`;CanActivate bool `json:"can_activate"`}
  if err:=json.Unmarshal(pre.Body.Bytes(),&info);err!=nil{t.Fatal(err)}
  if info.Valid!=1||info.Required!=1||info.CanActivate{t.Fatalf("unexpected preflight: %+v",info)}
- if err:=db.Model(&models.DeviceKeyEnvelope{}).Where("vault_id = ? AND device_id = ?",fixtureVaultID,fixtureDeviceID).Update("ciphertext",bytes.Repeat([]byte{8},32)).Error;err!=nil{t.Fatal(err)}
+ if err:=db.Model(&models.DeviceKeyEnvelope{}).Where("vault_id = ? AND device_id = ?",fixtureVaultID,fixtureDeviceID).Update("envelope",bytes.Repeat([]byte{8},32)).Error;err!=nil{t.Fatal(err)}
  changed:=request("GET","/api/v1/vaults/"+fixtureVaultID+"/rotation/preflight",nil)
  var after struct{Valid int `json:"valid_envelope_acks"`}
  if err:=json.Unmarshal(changed.Body.Bytes(),&after);err!=nil{t.Fatal(err)}

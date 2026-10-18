@@ -57,7 +57,7 @@ func TestHistoricalRotationAcknowledgements(t *testing.T){
  if err:=db.Where("rotation_id = ?",rotation.ID).Find(&recipients).Error;err!=nil{t.Fatal(err)}
  count,err:=historicalAckCoverage(db,rotation,recipients,[]uint64{1})
  if err!=nil||count!=1{t.Fatalf("valid count %d err %v",count,err)}
- if err:=db.Model(&models.DeviceKeyEnvelope{}).Where("id = ?","old").Update("ciphertext",bytes.Repeat([]byte{9},32)).Error;err!=nil{t.Fatal(err)}
+ if err:=db.Model(&models.DeviceKeyEnvelope{}).Where("id = ?","old").Update("envelope",bytes.Repeat([]byte{9},32)).Error;err!=nil{t.Fatal(err)}
  count,err=historicalAckCoverage(db,rotation,recipients,[]uint64{1})
  if err!=nil||count!=0{t.Fatalf("changed ciphertext valid count %d err %v",count,err)}
 }
