@@ -35,7 +35,7 @@ func(a *API) acknowledgeRotationHistory(w http.ResponseWriter,r *http.Request,us
   if hex.EncodeToString(signing[:])!=recipient.SigningKeySHA256||hex.EncodeToString(encryption[:])!=recipient.EncryptionKeySHA256{return gorm.ErrRecordNotFound}
   var envelope models.DeviceKeyEnvelope
   if err:=tx.First(&envelope,"vault_id = ? AND device_id = ? AND key_epoch = ?",vaultID,device.ID,input.KeyEpoch).Error;err!=nil{return err}
-  hash:=sha256.Sum256(envelope.Ciphertext)
+  hash:=sha256.Sum256(envelope.Envelope)
   if hex.EncodeToString(hash[:])!=input.EnvelopeSHA256{return gorm.ErrRecordNotFound}
   if !ed25519.Verify(ed25519.PublicKey(device.SigningPublicKey),historicalAckMessage(rotation,device.ID,input.KeyEpoch,input.EnvelopeSHA256),input.Signature){return gorm.ErrRecordNotFound}
   return tx.Create(&models.RotationHistoryAck{RotationID:rotation.ID,DeviceID:device.ID,KeyEpoch:input.KeyEpoch,EnvelopeSHA256:input.EnvelopeSHA256,Signature:input.Signature}).Error
