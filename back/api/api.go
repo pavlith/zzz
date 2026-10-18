@@ -71,6 +71,7 @@ func New(db *gorm.DB) http.Handler {
  register(http.MethodPost,"/vaults/:vault/rotation/cancel",a.cancelRotation)
  register(http.MethodGet,"/vaults/:vault/key-envelopes",a.listKeyEnvelopes)
  register(http.MethodGet,"/vaults/:vault/key-envelopes/history",a.historicalKeyEnvelopes)
+ register(http.MethodPost,"/vaults/:vault/key-envelopes/history/rewrap",a.rewrapHistoricalEnvelope)
  register(http.MethodPost,"/vaults/:vault/key-envelopes",a.createKeyEnvelope)
  register(http.MethodGet,"/vaults/:vault/snapshot",a.snapshot)
  register(http.MethodGet,"/vaults/:vault/snapshot-consistent",a.consistentSnapshot)
