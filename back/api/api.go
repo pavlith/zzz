@@ -46,6 +46,7 @@ func New(db *gorm.DB) http.Handler {
  register(http.MethodGet,"/sessions",a.listSessions)
  register(http.MethodDelete,"/sessions/:session",a.revokeSession)
  register(http.MethodGet,"/devices",a.listDevices)
+ register(http.MethodGet,"/devices/audit",a.deviceAudit)
  register(http.MethodPost,"/devices",a.createDevice)
  register(http.MethodDelete,"/devices/:device",a.revokeDevice)
  register(http.MethodPost,"/devices/:device/challenge",a.issueDeviceChallenge)
