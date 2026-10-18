@@ -56,6 +56,7 @@ func New(db *gorm.DB) http.Handler {
  register(http.MethodPost,"/vaults/:vault/permissions",a.permissions)
  register(http.MethodGet,"/vaults/:vault/key-envelopes",a.listKeyEnvelopes)
  register(http.MethodPost,"/vaults/:vault/key-envelopes",a.createKeyEnvelope)
+ register(http.MethodGet,"/vaults/:vault/snapshot",a.snapshot)
  register(http.MethodGet,"/vaults/:vault/sync",a.pullSync)
  register(http.MethodPost,"/vaults/:vault/sync/push",a.pushSync)
  register(http.MethodGet,"/vaults/:vault/items",a.items)
