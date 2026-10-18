@@ -32,7 +32,7 @@ func historicalAckCoverage(tx *gorm.DB,rotation models.VaultRotation,recipients 
     if err==gorm.ErrRecordNotFound{continue}
     return 0,err
    }
-   digest:=sha256.Sum256(envelope.Ciphertext)
+   digest:=sha256.Sum256(envelope.Envelope)
    if hex.EncodeToString(digest[:])!=ack.EnvelopeSHA256{continue}
    if !ed25519.Verify(ed25519.PublicKey(device.SigningPublicKey),historicalAckMessage(rotation,device.ID,epoch,ack.EnvelopeSHA256),ack.Signature){continue}
    valid++
