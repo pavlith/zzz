@@ -2,7 +2,6 @@ package api
 
 import (
  "bytes"
- "crypto/sha256"
  "net/http/httptest"
  "testing"
  "time"
@@ -17,7 +16,7 @@ func TestUntrustedDeviceCannotReceiveVaultEnvelope(t *testing.T) {
  if err:=database.Migrate(db);err!=nil{t.Fatal(err)}
  now:=time.Now().UTC()
  recipient,signer:=candidateTestKeys(t)
- manifest:=sha256.Sum256([]byte("candidate-test-manifest"))
+ manifest:=candidateTestManifest()
  for _,v:=range []any{
   &models.User{ID:"u",Email:"u@invalid.test"},
   &models.Workspace{ID:"w",Name:"W",Kind:"personal"},
