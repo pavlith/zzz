@@ -2,9 +2,11 @@ package api
 
 import (
  "crypto/ed25519"
+ "errors"
  "crypto/sha256"
  "encoding/hex"
  "encoding/json"
+ "encoding/base64"
  "net/http"
  "strconv"
 
@@ -13,6 +15,8 @@ import (
  "github.com/pavlith/zzz/back/models"
  "gorm.io/gorm"
 )
+
+var errRecipientKeyMismatch = errors.New("recipient key mismatch")
 
 func historicalRewrapMessage(vaultID string,epoch uint64,source,target,hash string)[]byte {
  return []byte("zzz-historical-key-rewrap-v1:"+vaultID+":"+strconvFormatEpoch(epoch)+":"+source+":"+target+":"+hash)
@@ -46,6 +50,9 @@ func(a *API) rewrapHistoricalEnvelope(w http.ResponseWriter,r *http.Request,user
   trusted:="verified_at IS NOT NULL AND trusted_at IS NOT NULL AND revoked_at IS NULL"
   if err:=tx.First(&source,"id = ? AND user_id = ? AND "+trusted,input.SourceDeviceID,userID).Error;err!=nil{return err}
   if err:=tx.First(&target,"id = ? AND "+trusted,input.DeviceID).Error;err!=nil{return err}
+  fingerprint:=sha256.Sum256(target.EncryptionPublicKey)
+  parsed,parseErr:=parseCandidateEnvelope(ciphertext,vaultID,target.ID,input.KeyEpoch)
+  if parseErr!=nil||parsed.RecipientKeySHA256!=base64.RawURLEncoding.EncodeToString(fingerprint[:]){return errRecipientKeyMismatch}
   canRead,err:=acl.Allowed(tx,target.UserID,vaultID,acl.Read)
   if err!=nil{return err}
   if !canRead{return gorm.ErrRecordNotFound}
@@ -57,6 +64,7 @@ func(a *API) rewrapHistoricalEnvelope(w http.ResponseWriter,r *http.Request,user
  })
  if err!=nil{
   if err==errKeyEpochMismatch{problem(w,409,"historical_epoch_required");return}
+  if err==errRecipientKeyMismatch{problem(w,400,"recipient_key_mismatch");return}
   problem(w,409,"historical_rewrap_conflict");return
  }
  write(w,http.StatusCreated,map[string]bool{"stored":true})
