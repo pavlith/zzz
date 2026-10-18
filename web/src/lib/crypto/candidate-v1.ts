@@ -59,6 +59,19 @@ function metadata(e: Envelope, includeCommitment: boolean): Record<string, strin
   return m;
 }
 export function validate(e: Envelope): void {
+  // Reject additional parsed object members; raw duplicate JSON keys must be
+  // rejected by a strict parser before calling this function.
+  const required = [
+    'protocol', 'suite', 'vault_id', 'device_id', 'rotation_id',
+    'signer_device_id', 'key_epoch', 'recipient_key_sha256',
+    'ephemeral_public_key', 'nonce', 'ciphertext', 'manifest_sha256',
+    'vault_key_commitment', 'signature',
+  ];
+  if (e === null || typeof e !== 'object' ||
+      Object.keys(e).length !== required.length ||
+      !required.every((field) => Object.prototype.hasOwnProperty.call(e, field))) fail();
+  if (required.some((field) => field !== 'key_epoch' &&
+      typeof (e as unknown as Record<string, unknown>)[field] !== 'string')) fail();
   if (e.protocol !== PROTOCOL || e.suite !== SUITE ||
     ![e.vault_id, e.device_id, e.rotation_id, e.signer_device_id].every((v) => UUID.test(v)) ||
     !Number.isSafeInteger(e.key_epoch) || e.key_epoch < 1) fail();
