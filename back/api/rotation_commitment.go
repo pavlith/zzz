@@ -41,7 +41,9 @@ func(a *API) submitRotationCommitment(w http.ResponseWriter,r *http.Request,user
   if err:=tx.Where("rotation_id = ?",rotation.ID).Order("device_id").Find(&recipients).Error;err!=nil{return err}
   if manifestDigest(rotation,recipients)!=rotation.ManifestSHA256{return gorm.ErrRecordNotFound}
   if !ed25519.Verify(ed25519.PublicKey(device.SigningPublicKey),rotationCommitmentMessage(rotation,device.ID,input.KeyCommitment),input.Signature){return gorm.ErrRecordNotFound}
-  return tx.Create(&models.RotationCommitment{RotationID:rotation.ID,DeviceID:device.ID,ManifestSHA256:input.ManifestSHA256,KeyCommitment:input.KeyCommitment,Signature:input.Signature}).Error
+  claim:=models.RotationCommitment{RotationID:rotation.ID,DeviceID:device.ID,ManifestSHA256:input.ManifestSHA256,KeyCommitment:input.KeyCommitment,Signature:input.Signature}
+  if err:=tx.Create(&claim).Error;err!=nil{return err}
+  return appendRotationCommitment(tx,claim)
  })
  if err!=nil{problem(w,409,"rotation_commitment_conflict");return}
  write(w,http.StatusCreated,map[string]bool{"recorded":true})
