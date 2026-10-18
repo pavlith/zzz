@@ -65,6 +65,7 @@ func New(db *gorm.DB) http.Handler {
  register(http.MethodGet,"/vaults/:vault/rotation-readiness",a.rotationReadiness)
  register(http.MethodPost,"/vaults/:vault/rotation/prepare",a.prepareRotation)
  register(http.MethodPost,"/vaults/:vault/rotation/sign",a.signRotation)
+ register(http.MethodPost,"/vaults/:vault/rotation/envelope-ack",a.acknowledgeRotationEnvelope)
  register(http.MethodGet,"/vaults/:vault/rotation",a.rotationStatus)
  register(http.MethodGet,"/vaults/:vault/rotation/preflight",a.rotationPreflightEndpoint)
  register(http.MethodPost,"/vaults/:vault/rotation/cancel",a.cancelRotation)
