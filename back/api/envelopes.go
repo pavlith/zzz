@@ -35,7 +35,11 @@ func (a *API) createKeyEnvelope(w http.ResponseWriter,r *http.Request,userID str
  }
  var vault models.Vault
  if err:=a.db.First(&vault,"id = ?",vaultID).Error;err!=nil {failure(w,err);return}
- if vault.KeyEpoch!=in.KeyEpoch {problem(w,409,"key_epoch_mismatch");return}
+ if vault.KeyEpoch!=in.KeyEpoch {
+  var rotations int64
+  if err:=a.db.Model(&models.VaultRotation{}).Where("vault_id = ? AND from_epoch = ? AND to_epoch = ? AND status = ?",vaultID,vault.KeyEpoch,in.KeyEpoch,"prepared").Count(&rotations).Error;err!=nil{failure(w,err);return}
+  if rotations!=1 {problem(w,409,"key_epoch_mismatch");return}
+ }
  var device models.Device
  if err:=a.db.First(&device,"id = ? AND revoked_at IS NULL AND verified_at IS NOT NULL AND trusted_at IS NOT NULL",in.DeviceID).Error;err!=nil {failure(w,err);return}
  permitted,err:=acl.Allowed(a.db,device.UserID,vaultID,acl.Read)
