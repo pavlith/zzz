@@ -45,6 +45,10 @@ func TestRotationReadinessAndCancellation(t *testing.T) {
  var check struct{CanActivate bool `json:"can_activate"`;Blockers []string `json:"blockers"`;EnvelopesComplete bool `json:"envelopes_complete"`}
  if err:=json.Unmarshal(preflight.Body.Bytes(),&check);err!=nil{t.Fatal(err)}
  if check.CanActivate||!check.EnvelopesComplete||len(check.Blockers)==0{t.Fatalf("unsafe preflight: %+v",check)}
+ if got:=call("POST","/api/v1/vaults/v/rotation/activate","").Code;got!=409{t.Fatalf("unsafe activation accepted: %d",got)}
+ var beforeCancel models.Vault
+ if err:=db.First(&beforeCancel,"id = ?","v").Error;err!=nil{t.Fatal(err)}
+ if beforeCancel.KeyEpoch!=1{t.Fatal("activation guard changed key epoch")}
  if got:=call("POST","/api/v1/vaults/v/rotation/cancel","").Code;got!=200{t.Fatalf("cancel: %d",got)}
  if got:=call("POST","/api/v1/vaults/v/rotation/cancel","").Code;got!=404{t.Fatalf("duplicate cancel: %d",got)}
  var vault models.Vault
