@@ -25,6 +25,8 @@ type rotationPreflight struct {
  RequiredHistoricalEpochs []uint64 `json:"required_historical_epochs"`
  MissingHistoricalEnvelopes []missingHistoricalEnvelope `json:"missing_historical_envelopes"`
  HistoricalEnvelopesComplete bool `json:"historical_envelopes_complete"`
+ RequiredHistoricalAcks int `json:"required_historical_acks"`
+ ValidHistoricalAcks int `json:"valid_historical_acks"`
 }
 
 // activationPreflight checks a consistent database snapshot. It deliberately
@@ -58,6 +60,10 @@ func activationPreflight(db *gorm.DB,vaultID string)(rotationPreflight,error){
   out.RequiredHistoricalEpochs=history.RequiredEpochs
   out.MissingHistoricalEnvelopes=history.Missing
   out.HistoricalEnvelopesComplete=history.Complete
+  out.RequiredHistoricalAcks=len(recipients)*len(history.RequiredEpochs)
+  out.ValidHistoricalAcks,err=historicalAckCoverage(tx,rotation,recipients,history.RequiredEpochs)
+  if err!=nil{return err}
+  if out.ValidHistoricalAcks!=out.RequiredHistoricalAcks{out.Blockers=append(out.Blockers,"historical_acknowledgements_missing")}
   if !history.Complete{out.Blockers=append(out.Blockers,"historical_envelopes_missing")}
   out.RequiredEnvelopeAcks=len(recipients)
   for _,recipient:=range recipients{
