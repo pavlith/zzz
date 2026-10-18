@@ -1,6 +1,8 @@
 package api
 
 import (
+ "crypto/sha256"
+ "encoding/hex"
  "github.com/pavlith/zzz/back/acl"
  "github.com/pavlith/zzz/back/models"
  "gorm.io/gorm"
@@ -31,6 +33,11 @@ func validateRotation(db *gorm.DB,rotation models.VaultRotation)(rotationValidat
   if err!=nil{
    if err==gorm.ErrRecordNotFound{out.Invalid=append(out.Invalid,member.DeviceID);continue}
    return out,err
+  }
+  signing:=sha256.Sum256(device.SigningPublicKey)
+  encryption:=sha256.Sum256(device.EncryptionPublicKey)
+  if hex.EncodeToString(signing[:])!=member.SigningKeySHA256||hex.EncodeToString(encryption[:])!=member.EncryptionKeySHA256{
+   out.Invalid=append(out.Invalid,member.DeviceID);continue
   }
   allowed,err:=acl.Allowed(db,device.UserID,rotation.VaultID,acl.Read)
   if err!=nil{return out,err}
