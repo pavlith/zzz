@@ -22,11 +22,8 @@ func Open(dsn string) (*gorm.DB,error) {
  db.Exec("PRAGMA journal_mode = WAL")
  return db,nil
 }
+// Migrate applies tracked schema versions. Version 1 creates the legacy baseline
+// schema, version 2 enforces one pending rotation per vault.
 func Migrate(db *gorm.DB) error {
- // Initial schema; production migrations must be versioned before release.
- return db.AutoMigrate(
-  &models.User{},&models.Workspace{},&models.WorkspaceMember{},
-  &models.Group{},&models.GroupMember{},&models.Vault{},
-  &models.VaultPermission{},&models.VaultKeyEnvelope{},&models.Item{},&auth.Token{},&models.Device{}, &models.DeviceKeyEnvelope{}, &models.DeviceChallenge{}, &models.DeviceApprovalChallenge{}, &models.DeviceAudit{}, &models.DeviceSessionChallenge{}, &models.SyncEvent{}, &models.SyncOperation{}, &models.ItemRevision{}, &models.VaultRotation{}, &models.RotationRecipient{}, &models.RotationSignature{}, &models.RotationEnvelopeAck{}, &models.RotationHistoryAck{}, &models.RotationCommitment{}, &models.RotationLogEntry{},
- )
+ return applyMigrations(db)
 }
