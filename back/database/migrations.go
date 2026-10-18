@@ -5,29 +5,12 @@ import (
  "fmt"
  "time"
 
- "github.com/pavlith/zzz/back/auth"
- "github.com/pavlith/zzz/back/models"
  "gorm.io/gorm"
 )
 
 type schemaMigration struct {
  Version uint64 `gorm:"primaryKey"`
  AppliedAt time.Time
-}
-
-// migration 1 is a frozen compatibility baseline for existing development DBs.
-// Do not edit this list after release; add explicit schema migrations instead.
-func baselineSchema(tx *gorm.DB) error {
- return tx.AutoMigrate(
-  &models.User{},&models.Workspace{},&models.WorkspaceMember{},
-  &models.Group{},&models.GroupMember{},&models.Vault{},
-  &models.VaultPermission{},&models.VaultKeyEnvelope{},&models.Item{},&auth.Token{},
-  &models.Device{},&models.DeviceKeyEnvelope{},&models.DeviceChallenge{},
-  &models.DeviceApprovalChallenge{},&models.DeviceAudit{},&models.DeviceSessionChallenge{},
-  &models.SyncEvent{},&models.SyncOperation{},&models.ItemRevision{},&models.VaultRotation{},
-  &models.RotationRecipient{},&models.RotationSignature{},&models.RotationEnvelopeAck{},
-  &models.RotationHistoryAck{},&models.RotationCommitment{},&models.RotationLogEntry{},
- )
 }
 
 func applyMigrations(db *gorm.DB) error {
@@ -48,7 +31,7 @@ func applyMigrations(db *gorm.DB) error {
   version uint64
   run func(*gorm.DB)error
  }{
-  {1,baselineSchema},
+  {1,baselineSQL},
   {2,func(tx *gorm.DB)error{
    // Fail on duplicate prepared rotations rather than silently choosing one.
    return tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_one_prepared_rotation_per_vault ON vault_rotations(vault_id) WHERE status = 'prepared'").Error
