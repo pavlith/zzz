@@ -31,6 +31,7 @@ func baselineSchema(tx *gorm.DB) error {
 }
 
 func applyMigrations(db *gorm.DB) error {
+ if err:=checkSQLiteIntegrity(db);err!=nil{return err}
  // Create the tracking table before the migration transaction, because SQLite
  // AutoMigrate may rebuild tables during baseline creation.
  if err:=db.AutoMigrate(&schemaMigration{});err!=nil{return err}
@@ -64,5 +65,5 @@ func applyMigrations(db *gorm.DB) error {
    return fmt.Errorf("migration %d: %w",m.version,err)
   }
  }
- return nil
+ return checkSQLiteIntegrity(db)
 }
