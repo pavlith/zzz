@@ -46,7 +46,7 @@ func(a *API) rotationStatus(w http.ResponseWriter,r *http.Request,userID string)
  if err:=a.db.Where("vault_id = ? AND status = ?",vaultID,"prepared").First(&rotation).Error;err!=nil{failure(w,err);return}
  validation,err:=validateRotation(a.db,rotation)
  if err!=nil{failure(w,err);return}
- write(w,200,map[string]any{"rotation_id":rotation.ID,"from_epoch":rotation.FromEpoch,"to_epoch":rotation.ToEpoch,"staged_envelopes":validation.Staged,"required_recipients":validation.Required,"missing_device_ids":validation.Missing,"invalid_device_ids":validation.Invalid,"envelopes_complete":validation.Complete,"status":rotation.Status,"can_activate":false,"reason":"authenticated_activation_not_implemented"})
+ write(w,200,map[string]any{"rotation_id":rotation.ID,"from_epoch":rotation.FromEpoch,"to_epoch":rotation.ToEpoch,"staged_envelopes":validation.Staged,"required_recipients":validation.Required,"missing_device_ids":validation.Missing,"invalid_device_ids":validation.Invalid,"unlisted_device_ids":validation.Unlisted,"envelopes_complete":validation.Complete,"status":rotation.Status,"can_activate":false,"reason":"authenticated_activation_not_implemented"})
 }
 
 var errRotationPending = &rotationPendingError{}
