@@ -35,6 +35,11 @@ func TestRotationRecipientManifest(t *testing.T) {
  if r:=request("POST","/api/v1/vaults/v/rotation/prepare","");r.Code!=201{t.Fatalf("prepare: %d %s",r.Code,r.Body)}
  second:=models.Device{ID:"second",UserID:"u",Name:"Second",VerifiedAt:&now,TrustedAt:&now,SigningPublicKey:bytes.Repeat([]byte{3},32),EncryptionPublicKey:bytes.Repeat([]byte{4},32)}
  if err:=db.Create(&second).Error;err!=nil{t.Fatal(err)}
+ status:=request("GET","/api/v1/vaults/v/rotation","")
+ if status.Code!=200{t.Fatalf("rotation readiness: %d",status.Code)}
+ var check struct{Unlisted []string `json:"unlisted_device_ids"`;Complete bool `json:"envelopes_complete"`}
+ if err:=json.Unmarshal(status.Body.Bytes(),&check);err!=nil{t.Fatal(err)}
+ if len(check.Unlisted)!=1||check.Unlisted[0]!="second"||check.Complete{t.Fatalf("manifest drift: %+v",check)}
  envelope:=func(device string)string{
   payload,_:=json.Marshal(map[string]any{"device_id":device,"key_epoch":2,"crypto_version":1,"ciphertext":bytes.Repeat([]byte{7},32)})
   return string(payload)
