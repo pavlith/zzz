@@ -3,7 +3,7 @@
 Initial **non-production** foundation for a multi-workspace encrypted password manager.
 
 ## Stack
-Go, Cobra, Viper (YAML + ZZZ_* env overrides), GORM and SQLite.
+Go, Echo v4, Cobra, Viper (YAML + ZZZ_* env overrides), GORM and SQLite.
 
 ## Layout
 - `cmd/zzz` — entrypoint

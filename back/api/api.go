@@ -5,6 +5,8 @@ import (
  "errors"
  "io"
  "net/http"
+ "github.com/labstack/echo/v4"
+ "github.com/labstack/echo/v4/middleware"
  "strings"
  
  "github.com/pavlith/zzz/back/acl"
@@ -15,22 +17,43 @@ import (
 )
 
 type API struct { db *gorm.DB; svc *service.Service }
-func New(db *gorm.DB)http.Handler{
+func New(db *gorm.DB) http.Handler {
  a:=&API{db:db,svc:service.New(db)}
- mux:=http.NewServeMux()
- mux.HandleFunc("GET /healthz",func(w http.ResponseWriter,r *http.Request){write(w,200,map[string]string{"status":"ok"})})
- mux.HandleFunc("GET /api/v1/me",a.secure(a.me))
- mux.HandleFunc("GET /api/v1/workspaces",a.secure(a.workspaces))
- mux.HandleFunc("POST /api/v1/workspaces",a.secure(a.workspaces))
- mux.HandleFunc("POST /api/v1/workspaces/{workspace}/groups",a.secure(a.groups))
- mux.HandleFunc("POST /api/v1/groups/{group}/members",a.secure(a.groupMembers))
- mux.HandleFunc("POST /api/v1/workspaces/{workspace}/vaults",a.secure(a.vaults))
- mux.HandleFunc("POST /api/v1/vaults/{vault}/permissions",a.secure(a.permissions))
- mux.HandleFunc("GET /api/v1/vaults/{vault}/items",a.secure(a.items))
- mux.HandleFunc("POST /api/v1/vaults/{vault}/items",a.secure(a.items))
- mux.HandleFunc("GET /api/v1/vaults/{vault}/items/{item}",a.secure(a.singleItem))
- mux.HandleFunc("PUT /api/v1/vaults/{vault}/items/{item}",a.secure(a.singleItem))
- return http.MaxBytesHandler(mux,1<<20)
+ e:=echo.New()
+ e.HideBanner=true
+ e.HidePort=true
+ e.Use(middleware.Recover())
+ e.Use(middleware.BodyLimit("1M"))
+ e.Use(middleware.Secure())
+ e.GET("/healthz",func(c echo.Context)error{
+  return c.JSON(http.StatusOK,map[string]string{"status":"ok"})
+ })
+ v1:=e.Group("/api/v1")
+ register:=func(method,path string,h handler){
+  wrapped:=func(c echo.Context)error{
+   r:=c.Request()
+   for _,key:=range []string{"workspace","group","vault","item"} {
+    if val:=c.Param(key);val!="" {r.SetPathValue(key,val)}
+   }
+   id,err:=auth.Authenticate(a.db,r.Header.Get("Authorization"))
+   if err!=nil{return c.JSON(http.StatusUnauthorized,map[string]string{"error":"unauthorized"})}
+   h(c.Response(),r,id)
+   return nil
+  }
+  v1.Add(method,path,wrapped)
+ }
+ register(http.MethodGet,"/me",a.me)
+ register(http.MethodGet,"/workspaces",a.workspaces)
+ register(http.MethodPost,"/workspaces",a.workspaces)
+ register(http.MethodPost,"/workspaces/:workspace/groups",a.groups)
+ register(http.MethodPost,"/groups/:group/members",a.groupMembers)
+ register(http.MethodPost,"/workspaces/:workspace/vaults",a.vaults)
+ register(http.MethodPost,"/vaults/:vault/permissions",a.permissions)
+ register(http.MethodGet,"/vaults/:vault/items",a.items)
+ register(http.MethodPost,"/vaults/:vault/items",a.items)
+ register(http.MethodGet,"/vaults/:vault/items/:item",a.singleItem)
+ register(http.MethodPut,"/vaults/:vault/items/:item",a.singleItem)
+ return e
 }
 type handler func(http.ResponseWriter,*http.Request,string)
 func (a *API)secure(h handler)http.HandlerFunc{
