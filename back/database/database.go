@@ -20,8 +20,8 @@ func Open(dsn string) (*gorm.DB,error) {
  db.Exec("PRAGMA journal_mode = WAL")
  return db,nil
 }
-// Migrate applies tracked schema versions. Version 1 creates the legacy baseline
-// schema, version 2 enforces one pending rotation per vault.
+// Migrate initializes the consolidated pre-v1 schema. Old development databases
+// with a newer migration ledger must be reset; no silent data conversion.
 func Migrate(db *gorm.DB) error {
  return applyMigrations(db)
 }
