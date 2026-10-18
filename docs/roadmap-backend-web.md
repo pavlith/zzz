@@ -18,7 +18,7 @@
 ## Dependency-ordered milestones and tasks
 
 ### M0 — architecture and contracts (BLOCKER; TODO)
-- [ ] M0-01 Freeze product scope, threat model (server compromise, malicious device/admin, offline clients, lost devices, browser/XSS, rollback, metadata leakage), acceptable risks and threat-to-test matrix.
+- [x] M0-01 Draft and record scoped threat model (independent review/tests pending) — Freeze product scope, threat model (server compromise, malicious device/admin, offline clients, lost devices, browser/XSS, rollback, metadata leakage), acceptable risks and threat-to-test matrix.
 - [ ] M0-02 Freeze API OpenAPI 3.1, error taxonomy, pagination, sync cursor semantics, optimistic concurrency, device/session binding and feature negotiation.
 - [ ] M0-03 Freeze E2EE protocol, canonical serialization, domain separation, recipient identity verification/key transparency, manifest and key commitment wire format; review cross-language behavior.
 - [ ] M0-04 Write ADRs for login/recovery, key hierarchy, trusted device bootstrap, key revocation and removal, archived keys, offline sync, conflict resolution, security constraints of browser/PWA.
@@ -28,14 +28,14 @@
 - [x] M1-01 Go service, healthcheck, basic CLI and SQLite schema — prototype.
 - [x] M1-02 Vault/workspace/group/ACL/item/revision/sync core — prototype.
 - [x] M1-03 Development CI Go test/race — available, but must verify latest runs.
-- [ ] M1-04 Replace AutoMigrate with numbered forward/rollback migrations, schema constraints/FK integrity and migration upgrade tests.
+- [ ] M1-04 Replace AutoMigrate with numbered forward/rollback migrations, schema constraints/FK integrity and migration upgrade tests. **Partial:** numbered v1 compatibility baseline/v2 prepared-rotation unique index, idempotence test; rollback, full SQL baseline, legacy-upgrade/restore testing and FK audit remain.
 - [ ] M1-05 Extract routes into domain services/DTOs, stable validation and structured typed errors; OpenAPI generation, contract tests.
 - [ ] M1-06 Add database isolation/concurrency tests, transaction retry strategy, unique prepared-rotation constraint, immutable/audited history guarantees.
 - [ ] M1-07 Request IDs, redacted structured logs, tracing/metrics, health/readiness, graceful shutdown, configuration/secrets and TLS reverse proxy guidance.
 
 ### M2 — production identity, sessions and devices (BLOCKER; TODO/IN PROGRESS)
 - [x] M2-01 Device key verification, approval and signed device session prototype.
-- [ ] M2-02 Production registration/login: choose standard audited OPAQUE/PAKE or a vetted alternative; account enumeration protection and KDF parameters; no homemade PAKE.
+- [ ] M2-02 Production registration/login: ADR proposal written; concrete vetted implementation and interoperability still unverified. Choose standard audited OPAQUE/PAKE or a vetted alternative; account enumeration protection and KDF parameters; no homemade PAKE.
 - [ ] M2-03 Device-bound short-lived sessions, secure refresh rotation, idle/absolute expiry, theft/replay controls, logout-all; web cookie strategy (HttpOnly/Secure/SameSite), CSRF and CORS.
 - [ ] M2-04 First-device bootstrap, independent identity verification, new-device pairing UX and recovery with lost-all-devices policy.
 - [ ] M2-05 Abuse/rate limits across auth and device flows, account/device notifications and audit UI; security penetration tests.
@@ -96,3 +96,10 @@
 ## Definition of done for backend + web
 
 An authenticated user can safely onboard two independently verified devices; create and share vaults with enforceable ACL; encrypt/decrypt items only on the client; synchronize edits/deletions/history offline and online; safely revoke, recover and rotate keys while preserving authorized historical access; use a responsive accessible Svelte 5 web UI; perform backups/restore and upgrades; pass end-to-end/security tests and an independent audit. No prototype feature counts as complete solely because its endpoint returns 200.
+
+## 2026-10-18 security + migrations checkpoint
+
+- M0-01: initial threat matrix in [threat-model.md](threat-model.md) exists; independent review and adversarial test matrix execution remain open.
+- M0-03, M0-04: candidate decisions captured in [ADR authentication](adr-authentication-and-recovery.md) and [ADR E2EE](adr-e2ee-contract.md); they are **not frozen or production approved**.
+- M1-04: schema migration ledger and numbered baseline/index steps introduced in `back/database/migrations.go`; remaining production gates above are explicitly open.
+- Web: directory contains an experimental crypto candidate under `web/src/lib/crypto`, **not a complete SvelteKit web app**. Avoid treating M5 as fully absent or complete without checking the actual files.
