@@ -30,7 +30,7 @@ func TestHistoricalRotationAcknowledgements(t *testing.T){
   &models.VaultPermission{ID:"p",VaultID:"v",PrincipalType:"user",PrincipalID:"u",CanRead:true,CanManage:true},
   &models.Device{ID:"d",UserID:"u",Name:"Trusted",VerifiedAt:&now,TrustedAt:&now,SigningPublicKey:pub,EncryptionPublicKey:bytes.Repeat([]byte{2},32)},
   &models.ItemRevision{VaultID:"v",ItemID:"item",Revision:1,KeyEpoch:1},
-  &models.DeviceKeyEnvelope{ID:"old",VaultID:"v",DeviceID:"d",KeyEpoch:1,CryptoVersion:1,Ciphertext:cipher},
+  &models.DeviceKeyEnvelope{ID:"old",VaultID:"v",DeviceID:"d",KeyEpoch:1,CryptoVersion:1,Envelope:cipher},
  }{if err:=db.Create(v).Error;err!=nil{t.Fatal(err)}}
  token,err:=auth.Issue(db,"u",time.Hour);if err!=nil{t.Fatal(err)}
  server:=New(db)
