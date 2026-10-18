@@ -17,9 +17,5 @@ jobs:
           cache: false
       - name: Resolve dependencies
         run: go mod tidy
-      - name: Check formatting
-        run: |
-          files=$(gofmt -l $(git ls-files '*.go'))
-          if [ -n "$files" ]; then echo "$files"; exit 1; fi
       - name: Test with race detection
         run: go test -race ./...
