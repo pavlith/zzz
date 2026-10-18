@@ -72,3 +72,12 @@ Build fixtures from fixed test-only keys, ephemeral X25519 secret and nonce, inc
 5. Obtain independent protocol review; only then freeze a numbered production protocol and update OpenAPI.
 
 **Safety gate:** rotation activation must continue to return HTTP 409 until all required cryptographic and authorization gates pass. No real passwords.
+
+
+## Experimental browser adapter status (2026-10-18)
+
+`web/src/lib/crypto/candidate-v1.ts` contains a preliminary TypeScript/WebCrypto **decrypt-and-verify** adapter. It is not a complete Svelte application, has no browser build/test harness, does not implement wrapping, does not independently authenticate signer identity, and does not establish trusted manifest authorization or key transparency. Its caller must supply a previously authenticated Ed25519 signer key and recipient public key associated with the private key. X25519/Ed25519 WebCrypto support must be checked in target browsers. Browser memory zeroization cannot be guaranteed.
+
+**Interoperability gate still open:** no checked-in cross-language fixed expected ciphertext/signature bytes or negative fixtures have been verified against this adapter. Go deterministic tests are not proof of browser interoperability. Current candidate canonicalization relies on a narrowly constrained ASCII-key/primitive-value JSON subset; a general RFC 8785 implementation and parser-level duplicate-member rejection must be independently assessed before freezing the wire protocol. The browser adapter currently accepts parsed objects and does not reject extra object members itself. Never parse untrusted raw JSON using plain JSON.parse and assume duplicate-field detection.
+
+Do not use real secrets or enable rotation activation.
