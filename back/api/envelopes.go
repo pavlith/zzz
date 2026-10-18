@@ -3,6 +3,8 @@ package api
 import (
  "net/http"
  "encoding/json"
+ "crypto/sha256"
+ "encoding/base64"
 
  "github.com/google/uuid"
  "github.com/pavlith/zzz/back/acl"
@@ -51,6 +53,13 @@ func (a *API) createKeyEnvelope(w http.ResponseWriter,r *http.Request,userID str
  if err!=nil || !permitted {problem(w,404,"recipient_not_allowed");return}
  ciphertext,err:=decodeCandidateEnvelopeRequest(in.Envelope,vaultID,in.DeviceID,in.KeyEpoch)
  if err!=nil{problem(w,400,"invalid_envelope");return}
+ // Bind the envelope fingerprint to the authenticated recipient device record.
+ parsed,err:=parseCandidateEnvelope(ciphertext,vaultID,device.ID,in.KeyEpoch)
+ if err!=nil{problem(w,400,"invalid_envelope");return}
+ digest:=sha256.Sum256(device.EncryptionPublicKey)
+ if parsed.RecipientKeySHA256!=base64.RawURLEncoding.EncodeToString(digest[:]){
+  problem(w,400,"recipient_key_mismatch");return
+ }
  item:=models.DeviceKeyEnvelope{
   ID:uuid.NewString(),VaultID:vaultID,DeviceID:device.ID,
   KeyEpoch:in.KeyEpoch,CryptoVersion:1,Ciphertext:ciphertext,
