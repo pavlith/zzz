@@ -31,7 +31,7 @@ func TestPushIdempotencyAndDelete(t *testing.T) {
   req.Header.Set("Content-Type","application/json")
   rec:=httptest.NewRecorder();router.ServeHTTP(rec,req);return rec
  }
- body:=`{"operation_id":"4dd88e79-f4be-4bc7-8bc1-41ad4694d65d","type":"upsert","nonce":"bm9uY2U=","ciphertext":"Y2lwaGVy","crypto_version":1}`
+ body:=`{"operation_id":"4dd88e79-f4be-4bc7-8bc1-41ad4694d65d","type":"upsert","nonce":"bm9uY2U=","ciphertext":"Y2lwaGVy","crypto_version":1,"key_epoch":1}`
  res:=push(body)
  if res.Code!=200{t.Fatalf("create: %d %s",res.Code,res.Body)}
  var output struct {ItemID string `json:"item_id"`;Revision uint64 `json:"revision"`;Replayed bool `json:"replayed"`}
@@ -42,8 +42,8 @@ func TestPushIdempotencyAndDelete(t *testing.T) {
  var again struct{Replayed bool `json:"replayed"`}
  if err:=json.Unmarshal(res.Body.Bytes(),&again);err!=nil{t.Fatal(err)}
  if !again.Replayed{t.Fatal("expected replay")}
- if got:=push(`{"operation_id":"4dd88e79-f4be-4bc7-8bc1-41ad4694d65d","type":"upsert","nonce":"bm9uY2U=","ciphertext":"ZGlmZmVyZW50","crypto_version":1}`).Code;got!=409{t.Fatalf("operation reused: %d",got)}
- del:=fmt.Sprintf(`{"operation_id":"8a98b003-6b89-4c67-93a6-7652b0c43db1","type":"delete","item_id":"%s","expected_revision":1}`,output.ItemID)
+ if got:=push(`{"operation_id":"4dd88e79-f4be-4bc7-8bc1-41ad4694d65d","type":"upsert","nonce":"bm9uY2U=","ciphertext":"ZGlmZmVyZW50","crypto_version":1,"key_epoch":1}`).Code;got!=409{t.Fatalf("operation reused: %d",got)}
+ del:=fmt.Sprintf(`{"operation_id":"8a98b003-6b89-4c67-93a6-7652b0c43db1","type":"delete","item_id":"%s","expected_revision":1,"key_epoch":1}`,output.ItemID)
  if got:=push(del).Code;got!=200{t.Fatalf("delete: %d",got)}
  if got:=push(del).Code;got!=200{t.Fatalf("delete replay: %d",got)}
  var events []models.SyncEvent
